@@ -1,0 +1,1624 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Lumora - Documentation</title>
+    <link rel="stylesheet" href="css/styles.css">
+</head>
+<body>
+
+    <h1>Lumora Documentation</h1>
+    <p>Welcome to the documentation for <strong>Lumora</strong>, an online academy platform made of three projects: a Flutter mobile app for learners (Android and iOS), a NestJS + PostgreSQL backend API, and a Next.js admin panel. Learners browse and buy courses, watch lessons, take quizzes and timed live exams, and earn certificates. You run everything from the admin panel.</p>
+
+    <div class="alert">
+        <strong>What is in this package:</strong>
+        <ul class="step-list" style="margin-top: 10px;">
+            <li><strong>Flutter-App/</strong> &mdash; the learner app (Android and iOS).</li>
+            <li><strong>Backend/</strong> &mdash; the NestJS + PostgreSQL API.</li>
+            <li><strong>Admin-Panel/</strong> &mdash; the Next.js admin panel.</li>
+            <li><strong>Documentation/</strong> &mdash; this guide.</li>
+        </ul>
+        <strong>Setting up for the first time?</strong> Start with the <a href="#backend-setup">backend (section 13)</a>, then the <a href="#admin-panel-setup">admin panel (section 14)</a>, then come back to the app (sections 1&ndash;12). The app needs a running backend to show anything.
+    </div>
+
+    <div class="toc">
+        <strong>Contents</strong>
+        <ol>
+            <li><a href="#feature-walkthrough">Feature Walkthrough</a></li>
+            <li><a href="#third-party-services">Third-Party Services and Costs</a></li>
+            <li><a href="#architecture">How the Pieces Connect (Architecture)</a></li>
+            <li><a href="#prerequisites">1. Prerequisites</a></li>
+            <li><a href="#environment-setup">2. Environment Setup</a></li>
+            <li><a href="#change-package-name">3. Change Package Name and Bundle ID</a></li>
+            <li><a href="#firebase-setup">4. Firebase Setup</a></li>
+            <li><a href="#social-sign-in">5. Google Sign-In and Push Notifications</a></li>
+            <li><a href="#change-app-name">6. Change App Name</a></li>
+            <li><a href="#change-app-icon">7. App Icon, Splash and Brand Colours</a></li>
+            <li><a href="#api-customization">8. Connect the App to Your Backend</a></li>
+            <li><a href="#localization">9. Languages</a></li>
+            <li><a href="#web-payments">10. Web Payment Gateways (Stripe, Flutterwave, Razorpay)</a></li>
+            <li><a href="#store-payments">11. Google Play In-App Purchases (RevenueCat)</a></li>
+            <li><a href="#build-and-release">12. Build and Release</a></li>
+            <li><a href="#backend-setup">13. Backend Setup (NestJS)</a></li>
+            <li><a href="#admin-panel-setup">14. Admin Panel Setup (Next.js)</a></li>
+            <li><a href="#api-reference">15. API Reference</a></li>
+            <li><a href="#database-schema">16. Database Schema</a></li>
+            <li><a href="#faq">17. FAQ and Common Build Errors</a></li>
+            <li><a href="#support">18. Support</a></li>
+            <li><a href="#ai-disclosure">19. AI Disclosure</a></li>
+            <li><a href="#changelog">20. Changelog</a></li>
+            <li><a href="#upgrading">21. Upgrading to a New Version</a></li>
+        </ol>
+    </div>
+
+    <section id="feature-walkthrough">
+        <h2>Feature Walkthrough</h2>
+        <p>A plain-language tour of what the app does, so you can find your way around before touching any code. Nothing in this section needs programming knowledge; the technical setup starts at <a href="#prerequisites">section 1</a>.</p>
+
+        <div class="app-shots">
+            <figure><img src="assets/app-01-sign-in.jpg" alt="Sign-in screen with email and Google" loading="lazy"><figcaption>Sign in</figcaption></figure>
+            <figure><img src="assets/app-02-pick-your-topics.jpg" alt="Pick your topics" loading="lazy"><figcaption>Pick your topics</figcaption></figure>
+            <figure><img src="assets/app-05-home-screen.jpg" alt="Home screen with course rails" loading="lazy"><figcaption>Home</figcaption></figure>
+            <figure><img src="assets/app-12-course-details.jpg" alt="Course details page" loading="lazy"><figcaption>Course details</figcaption></figure>
+        </div>
+
+        <h3>First launch</h3>
+        <ul class="step-list">
+            <li>The app shows a short intro and the sign-in screen. Learners sign in with email and password or with Google, or create an account.</li>
+            <li>If you turn on learning preferences, the app then asks for the learner's topics, goal, level and languages, and builds a personal Home screen from the answers.</li>
+            <li>The app name, logo, brand colours, languages, payment methods and feature switches all come from your backend, so the app looks like your academy without a rebuild.</li>
+        </ul>
+
+        <h3>The main tabs</h3>
+        <ul class="step-list">
+            <li><strong>Home:</strong> banners and course rails (Hot picks, For you, Because you enrolled in, categories, top courses) in the order you set in the admin panel.</li>
+            <li><strong>Search:</strong> search with filters (category, level, price, rating, instructor) and sorting, plus recent and trending searches.</li>
+            <li><strong>Exams:</strong> upcoming, live and finished live exams with results and the leaderboard.</li>
+            <li><strong>My Learning:</strong> the learner's courses with progress, certificates and offline downloads.</li>
+            <li><strong>Account:</strong> profile, purchase history, wishlist, notifications, settings, help and legal pages.</li>
+        </ul>
+
+        <div class="app-shots">
+            <figure><img src="assets/app-17-checkout-and-coupons.jpg" alt="Checkout with coupon" loading="lazy"><figcaption>Checkout and coupons</figcaption></figure>
+            <figure><img src="assets/app-18-payment-methods.jpg" alt="Payment methods: Stripe, Flutterwave, Razorpay and Google Play" loading="lazy"><figcaption>Payment methods</figcaption></figure>
+            <figure><img src="assets/app-20-course-player.jpg" alt="Course player" loading="lazy"><figcaption>Course player</figcaption></figure>
+            <figure><img src="assets/app-22-quiz-overview.jpg" alt="Quiz overview" loading="lazy"><figcaption>Quizzes</figcaption></figure>
+        </div>
+
+        <h3>Buying a course</h3>
+        <ul class="step-list">
+            <li>Learners add courses or bundles to the cart, or tap <strong>Buy now</strong> for one course. At checkout they can apply a coupon.</li>
+            <li>The Payment page lists only the methods that the academy turned on and that every course in the cart accepts: Stripe, Flutterwave, Razorpay (hosted web checkout) and, for a single course on Android, Google Play.</li>
+            <li>With Google Play, the app shows the price Google charges in the learner's own currency, with a note that it can differ from the course price.</li>
+            <li>The course unlocks as soon as the backend confirms the payment. A receipt appears and the order is listed in Purchase history.</li>
+        </ul>
+
+        <h3>Learning</h3>
+        <ul class="step-list">
+            <li>Lessons can be videos (MP4, or adaptive streaming with Bunny Stream), articles, PDF documents and quizzes. Progress is saved as the learner watches.</li>
+            <li>Each lesson has notes, questions and answers, and course announcements. Allowed lessons can be downloaded for offline use.</li>
+            <li>Quizzes support pictures and maths equations. Live exams run at a set time with a timer, then show results and ranks.</li>
+            <li>When a course is complete, the learner confirms the name to print and gets a certificate with a QR verification page. It can be downloaded as a PDF, shared as an image or added to LinkedIn.</li>
+        </ul>
+
+        <div class="app-shots">
+            <figure><img src="assets/app-27-live-exams.jpg" alt="Live exams" loading="lazy"><figcaption>Live exams</figcaption></figure>
+            <figure><img src="assets/app-33-your-certificate.jpg" alt="Certificate" loading="lazy"><figcaption>Certificate</figcaption></figure>
+            <figure><img src="assets/app-35-my-learning.jpg" alt="My Learning" loading="lazy"><figcaption>My Learning</figcaption></figure>
+            <figure><img src="assets/app-38-account.jpg" alt="Account" loading="lazy"><figcaption>Account</figcaption></figure>
+        </div>
+
+        <h3>Languages and appearance</h3>
+        <ul class="step-list">
+            <li>The app ships in English, Bengali, Hindi, Arabic (right-to-left) and Spanish. You choose which ones learners can pick and the default language.</li>
+            <li>Learners can switch between light and dark mode. Your brand colours apply to both.</li>
+        </ul>
+
+        <h3>What you control from the admin panel</h3>
+        <ul class="step-list">
+            <li>Courses (details, pricing, curriculum, quiz builder, publishing), bundles, categories and live exams.</li>
+            <li>The app's Home screen: banners and course rails, with impressions, clicks and revenue per rail.</li>
+            <li>Learners, instructors, certificates and your team with staff roles.</li>
+            <li>Orders and refunds, coupons, sale campaigns, Google Play store products and the revenue report.</li>
+            <li>Push notifications, review moderation, course questions and FAQ.</li>
+            <li>Settings: branding, business mode, currency, languages, payment methods, legal pages, email, media, video hosting, feature switches, maintenance mode and the minimum app version.</li>
+        </ul>
+        <p>A tour of the admin panel with screenshots is in <a href="#admin-panel-tour">section 14</a>.</p>
+    </section>
+
+    <section id="third-party-services">
+        <h2>Third-Party Services and Costs</h2>
+        <p>Lumora is self-hosted: you receive the full source code, with no licence keys and nothing payable to us. Some features connect to outside services that are <strong>not included in the purchase</strong>.</p>
+
+        <div class="alert-warning">
+            <strong>Buyers are responsible for any and all fees charged by external services.</strong> This includes hosting, the database, file and video storage, developer accounts, payment processing fees, app store service fees, email sending and any usage beyond a provider's free tier. The item price covers the source code and documentation only. Prices change; check each provider's current rates.
+        </div>
+
+        <div class="alert">
+            <strong>Accounts you create yourself.</strong> Lumora ships no credentials of ours. Every key you enter belongs to an account you own, under that provider's terms:
+            <ul class="step-list" style="margin-top:8px;">
+                <li><strong>Your own Firebase project</strong> for push notifications, crash reports and Google sign-in (<code>firebase_core</code>, <code>firebase_messaging</code>, <code>firebase_crashlytics</code> in the app; a service account in the backend). You accept Google's <a href="https://firebase.google.com/terms" target="_blank">Firebase Terms of Service</a> and pay any usage beyond the free plan. Setup: <a href="#firebase-setup">section 4</a>.</li>
+                <li><strong>Your own payment accounts</strong> (Stripe, Flutterwave, Razorpay) if you sell through web checkout. Setup: <a href="#web-payments">section 10</a>.</li>
+                <li><strong>Your own RevenueCat account and Google Play products</strong> if you sell through Google Play. Setup: <a href="#store-payments">section 11</a>.</li>
+                <li><strong>Your own storage, email and optional video accounts</strong> (any S3-compatible storage, an SMTP provider, optionally Bunny Stream). Setup: <a href="#backend-setup">section 13</a>.</li>
+            </ul>
+        </div>
+
+        <table class="doc-table">
+            <thead><tr><th>Service</th><th>Required?</th><th>Used for</th><th>Who bills you</th></tr></thead>
+            <tbody>
+                <tr><td>Server or cloud host</td><td>Required</td><td>Runs the backend (Node.js 20.19+) and the admin panel. A VPS, or a serverless host such as Vercel</td><td>Your hosting provider</td></tr>
+                <tr><td>PostgreSQL database</td><td>Required</td><td>All academy, course, learner and order data (PostgreSQL 15+)</td><td>Your database host, or free on your own server</td></tr>
+                <tr><td>S3-compatible storage (Cloudflare R2, Amazon S3, others)</td><td>Required for uploads</td><td>Course pictures, lesson videos, documents and certificate files uploaded from the admin panel. Without it you can only paste links to files hosted elsewhere</td><td>Your storage provider, usage-based</td></tr>
+                <tr><td>SMTP email provider</td><td>Required for password reset and emailed codes</td><td>Sending password-reset and verification codes</td><td>Your email provider, beyond its free tier</td></tr>
+                <tr><td>Firebase (your own project)</td><td>Optional</td><td>Push notifications (Cloud Messaging), crash reports (Crashlytics) and Google sign-in. The free plan covers typical use. Without it, those features are off</td><td>Google, beyond the free plan</td></tr>
+                <tr><td>Google Sign-In (OAuth client IDs in your Google Cloud project)</td><td>Optional</td><td>Sign in with Google. Without it, learners use email and password</td><td>Free</td></tr>
+                <tr><td>Stripe</td><td>Optional</td><td>Hosted card checkout</td><td>Stripe, a fee on each payment</td></tr>
+                <tr><td>Flutterwave</td><td>Optional</td><td>Hosted checkout with cards, bank transfer and mobile money</td><td>Flutterwave, a fee on each payment</td></tr>
+                <tr><td>Razorpay</td><td>Optional</td><td>Hosted checkout with cards, UPI and net banking</td><td>Razorpay, a fee on each payment</td></tr>
+                <tr><td>Google Play Billing</td><td>Optional</td><td>In-app purchase of a course on Android, with one-time products you create in Play Console</td><td>Google keeps a service fee on every purchase (commonly 15&ndash;30%)</td></tr>
+                <tr><td>RevenueCat (your own account)</td><td>Required for Google Play purchases</td><td>Talks to Google Play for the app and confirms every purchase to the backend</td><td>RevenueCat: free up to a monthly revenue limit, then a share of revenue</td></tr>
+                <tr><td>Apple In-App Purchase</td><td>Optional, not tested</td><td>The same RevenueCat flow supports App Store products, but Android is the tested target. Test it fully before you sell on iOS</td><td>Apple keeps a service fee on every purchase</td></tr>
+                <tr><td>PayPal, bKash, Nagad, SSLCommerz and other gateways</td><td>Not integrated</td><td>No checkout integration ships for these. Adding one is custom development</td><td>&mdash;</td></tr>
+                <tr><td>Bunny Stream</td><td>Optional</td><td>Adaptive video streaming with quality levels. Without it, lessons play as MP4 files from your storage</td><td>Bunny.net, usage-based</td></tr>
+                <tr><td>Zoom, Google Meet or Jitsi</td><td>Optional</td><td>Live classes: you paste a meeting link. Meetings run on your own account</td><td>That provider, under its pricing</td></tr>
+                <tr><td>Google Play Developer account</td><td>Required for Android</td><td>Publishing the app; USD 25 one-time</td><td>Google</td></tr>
+                <tr><td>Apple Developer Program</td><td>Required for iOS</td><td>Publishing the app; USD 99 per year</td><td>Apple</td></tr>
+                <tr><td>Ads</td><td>Not included</td><td>The app shows no ads and ships no ad SDK</td><td>&mdash;</td></tr>
+                <tr><td>Demo content</td><td>Free</td><td>The optional demo data uses pictures and video clips from our CDN so a fresh install has something to show. The clips come from the Blender Foundation's open movies (CC BY 3.0). Replace them with your own courses before you go live</td><td>&mdash;</td></tr>
+            </tbody>
+        </table>
+
+        <div class="alert">
+            <strong>Store rules.</strong> Google Play and the App Store have their own rules for selling digital content inside apps, including when web checkout may be offered. You choose which payment methods each course accepts (<a href="#store-payments">section 11</a>). You are responsible for checking those rules for your country and business, and for following the terms of every payment provider you use.
+        </div>
+    </section>
+
+    <section id="architecture">
+        <h2>How the Pieces Connect (Architecture)</h2>
+        <p>Lumora is three projects around one backend. Only the backend talks to the database and holds secrets; the app and the admin panel never see a database password or a payment secret key.</p>
+        <div class="arch-diagram">
+<svg viewBox="0 0 860 600" xmlns="http://www.w3.org/2000/svg" role="img" aria-label="Lumora architecture diagram" font-family="-apple-system, Segoe UI, Roboto, Arial, sans-serif">
+  <defs>
+    <marker id="ah" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse"><path d="M0,0 L10,5 L0,10 z" fill="#5b6478"/></marker>
+  </defs>
+  <style>
+    .box{stroke-width:2}
+    .t{font-size:15px;font-weight:700;fill:#111}
+    .s{font-size:12px;fill:#555}
+    .l{font-size:11.5px;fill:#38404f}
+    .ln{stroke:#5b6478;stroke-width:1.8;fill:none;marker-end:url(#ah)}
+    .dash{stroke-dasharray:6 4}
+  </style>
+  <rect class="box" x="20" y="20" width="230" height="86" rx="12" fill="#e6f4f2" stroke="#0f766e"/>
+  <text class="t" x="135" y="50" text-anchor="middle">Flutter App</text>
+  <text class="s" x="135" y="70" text-anchor="middle">learners, Android and iOS</text>
+  <text class="s" x="135" y="88" text-anchor="middle">Flutter-App/</text>
+
+  <rect class="box" x="610" y="20" width="230" height="86" rx="12" fill="#efe9ff" stroke="#7c4dff"/>
+  <text class="t" x="725" y="50" text-anchor="middle">Admin Panel</text>
+  <text class="s" x="725" y="70" text-anchor="middle">Next.js, staff in the browser</text>
+  <text class="s" x="725" y="88" text-anchor="middle">Admin-Panel/</text>
+
+  <rect class="box" x="290" y="210" width="280" height="110" rx="12" fill="#fff6e0" stroke="#d99a00"/>
+  <text class="t" x="430" y="242" text-anchor="middle">Backend API</text>
+  <text class="s" x="430" y="262" text-anchor="middle">NestJS, https://api.your-domain.com</text>
+  <text class="s" x="430" y="280" text-anchor="middle">Backend/ (PM2 or Vercel)</text>
+  <text class="s" x="430" y="300" text-anchor="middle">orders, exams, certificates, push</text>
+
+  <rect class="box" x="290" y="480" width="280" height="80" rx="12" fill="#e9f1ff" stroke="#3b6fd8"/>
+  <text class="t" x="430" y="512" text-anchor="middle">PostgreSQL</text>
+  <text class="s" x="430" y="534" text-anchor="middle">all academy, learner and order data</text>
+
+  <rect class="box" x="610" y="480" width="230" height="80" rx="12" fill="#fdecea" stroke="#e0533d"/>
+  <text class="t" x="725" y="512" text-anchor="middle">S3 storage / Bunny</text>
+  <text class="s" x="725" y="534" text-anchor="middle">pictures, videos, documents</text>
+
+  <rect class="box" x="625" y="210" width="215" height="110" rx="12" fill="#f3f4f6" stroke="#6b7280"/>
+  <text class="t" x="732" y="240" text-anchor="middle">Payment gateways</text>
+  <text class="s" x="732" y="262" text-anchor="middle">Stripe, Flutterwave, Razorpay</text>
+  <text class="s" x="732" y="280" text-anchor="middle">hosted checkout pages</text>
+  <text class="s" x="732" y="298" text-anchor="middle">webhooks to the backend</text>
+
+  <rect class="box" x="20" y="210" width="230" height="110" rx="12" fill="#fff2e5" stroke="#f57c00"/>
+  <text class="t" x="135" y="240" text-anchor="middle">Firebase</text>
+  <text class="s" x="135" y="262" text-anchor="middle">Cloud Messaging (push)</text>
+  <text class="s" x="135" y="280" text-anchor="middle">Crashlytics, Google sign-in</text>
+
+  <rect class="box" x="20" y="480" width="230" height="80" rx="12" fill="#eef7f0" stroke="#34a853"/>
+  <text class="t" x="135" y="510" text-anchor="middle">Google Play + RevenueCat</text>
+  <text class="s" x="135" y="532" text-anchor="middle">in-app course purchases</text>
+
+  <path class="ln" d="M190,106 L360,208"/>
+  <text class="l" x="282" y="146" text-anchor="middle" transform="rotate(30 282 146)">REST + X-Tenant + token</text>
+  <path class="ln" d="M670,106 L500,208"/>
+  <text class="l" x="578" y="146" text-anchor="middle" transform="rotate(-30 578 146)">REST + staff session</text>
+
+  <path class="ln" d="M110,106 L110,208"/>
+  <text class="l" x="104" y="166" text-anchor="end">Google ID token,</text>
+  <text class="l" x="104" y="180" text-anchor="end">push token</text>
+  <path class="ln" d="M288,265 L252,265"/>
+  <text class="l" x="270" y="250" text-anchor="middle">push</text>
+
+  <path class="ln" d="M430,320 L430,478"/>
+  <text class="l" x="436" y="400">SQL</text>
+  <path class="ln" d="M540,320 L660,478"/>
+  <text class="l" x="604" y="390">upload links,</text>
+  <text class="l" x="604" y="404">signed lesson links</text>
+  <path class="ln" d="M572,250 L623,250"/>
+  <path class="ln dash" d="M623,290 L572,290"/>
+  <text class="l" x="597" y="243" text-anchor="middle">pay</text>
+  <text class="l" x="597" y="306" text-anchor="middle">webhook</text>
+
+    
+  <path class="ln" d="M60,106 C 5,240 5,400 60,478"/>
+  <text class="l" x="28" y="400">buy</text>
+  <path class="ln dash" d="M250,510 L288,320"/>
+  <text class="l" x="210" y="440" text-anchor="middle">verify purchase,</text>
+  <text class="l" x="210" y="454" text-anchor="middle">webhook</text>
+</svg>
+        </div>
+        <table class="doc-table">
+            <thead><tr><th>Connection</th><th>What happens</th></tr></thead>
+            <tbody>
+                <tr><td>App &rarr; Backend</td><td>Every request goes to your <code>API_BASE_URL</code> with the <code>X-Tenant</code> header (your academy slug). Signed-in learners also send their Lumora access token in <code>Authorization: Bearer</code>. The backend issues and refreshes these tokens itself.</td></tr>
+                <tr><td>App &rarr; Firebase &rarr; Backend</td><td>For Google sign-in, the app gets a Google ID token and the backend checks it against <code>GOOGLE_CLIENT_IDS</code>. The app also registers its push token with the backend after sign-in.</td></tr>
+                <tr><td>Admin panel &rarr; Backend</td><td>Staff sign in with email and password. The admin panel's own server keeps the session in HttpOnly cookies and calls the backend's <code>/console/*</code> routes. The browser never calls the backend directly.</td></tr>
+                <tr><td>Backend &rarr; PostgreSQL</td><td>All data lives here. Only the backend connects. Money steps (order, payment, refund) each run in one database transaction.</td></tr>
+                <tr><td>Backend &rarr; S3 storage / Bunny Stream</td><td>The admin panel uploads files straight to your bucket with short-lived upload links from the backend. Learners get short-lived signed links to lesson files, or stream videos from Bunny Stream.</td></tr>
+                <tr><td>App &rarr; Gateway &rarr; Backend</td><td>For web checkout, the backend opens a hosted payment page (Stripe, Flutterwave or Razorpay) and the app shows it. The gateway's webhook tells the backend the result; the backend checks it with the gateway before it unlocks the course.</td></tr>
+                <tr><td>App &harr; Google Play / RevenueCat &rarr; Backend</td><td>For Google Play, the backend opens a pending order, the app buys the store product through RevenueCat, and the backend reads the purchase back from RevenueCat before it unlocks the course. RevenueCat's webhook also reports late purchases and refunds.</td></tr>
+                <tr><td>Backend &rarr; Firebase Cloud Messaging</td><td>Push notifications (from the admin panel, exam reminders, announcements) are sent by the backend with your Firebase service account.</td></tr>
+                <tr><td>Scheduler &rarr; Backend</td><td>A cron call to <code>/internal/cron/minute</code> every minute runs exam results, reminders, push delivery, missed-payment checks and cleanup.</td></tr>
+            </tbody>
+        </table>
+    </section>
+
+    <section id="prerequisites">
+        <h2>1. Prerequisites</h2>
+        <p>Use these versions for the smoothest build. The item was built and tested with the versions marked "tested".</p>
+
+        <div class="prereq-grid">
+            <div class="prereq-card"><strong>Flutter SDK</strong>Tested: 3.47.6<br>Min: 3.47.0 (Dart 3.13)</div>
+            <div class="prereq-card"><strong>Java (JDK)</strong>17 or 21<br>(Android Studio's bundled JDK works)</div>
+            <div class="prereq-card"><strong>Android Studio</strong>Latest stable, with the Android SDK</div>
+            <div class="prereq-card"><strong>Xcode + CocoaPods</strong>Xcode 16 or newer, CocoaPods 1.16 or newer (iOS only)</div>
+            <div class="prereq-card"><strong>Node.js</strong>20.19 or newer (22 LTS works)</div>
+            <div class="prereq-card"><strong>pnpm</strong>9 (admin panel; comes with Node through Corepack)</div>
+            <div class="prereq-card"><strong>PostgreSQL</strong>15 or newer</div>
+            <div class="prereq-card"><strong>IDE</strong>Android Studio or VS Code</div>
+        </div>
+
+        <h3>Server size</h3>
+        <p>The backend, PostgreSQL and the admin panel can run together on one Linux server (Ubuntu 22.04 or 24.04 LTS recommended). Videos, pictures and documents are stored in your S3-compatible bucket (or Bunny Stream), not on the server, so the disk only needs room for the code and the database.</p>
+        <table class="doc-table">
+            <thead><tr><th></th><th>CPU</th><th>RAM</th><th>Disk</th><th>Good for</th></tr></thead>
+            <tbody>
+                <tr><td><strong>Minimum</strong></td><td>1 vCPU</td><td>2 GB (plus 2 GB swap)</td><td>20 GB SSD</td><td>Testing and a small academy</td></tr>
+                <tr><td><strong>Recommended</strong></td><td>2 vCPU</td><td>4 GB</td><td>40 GB SSD</td><td>Launch, thousands of learners, live exams</td></tr>
+                <tr><td><strong>Growing</strong></td><td>4 vCPU or more</td><td>8 GB or more</td><td>80 GB SSD</td><td>Many learners in large live exams; consider a managed PostgreSQL</td></tr>
+            </tbody>
+        </table>
+        <p>Building the admin panel (<code>pnpm build</code>) needs about 1.5 GB of free RAM; on a 2 GB server add swap first. A shared hosting plan (cPanel without SSH and Node.js) is <strong>not</strong> enough: you need a VPS or cloud server with SSH access, or a Node.js host such as Vercel.</p>
+
+        <div class="alert">
+            <strong>Java version:</strong> the Android build runs on JDK 17 to 21. A newer JDK fails with "Unsupported class file major version". If <code>java -version</code> shows something newer, point Flutter at Android Studio's JDK: <code>flutter config --jdk-dir "&lt;Android Studio&gt;/jbr"</code>.
+        </div>
+    </section>
+
+    <section id="environment-setup">
+        <h2>2. Environment Setup</h2>
+        <p>Select your operating system to see the setup steps.</p>
+
+        <div class="tabs">
+            <div class="tab-buttons">
+                <button class="tab-btn active" onclick="openTab('windows')">Windows</button>
+                <button class="tab-btn" onclick="openTab('mac')">macOS</button>
+                <button class="tab-btn" onclick="openTab('linux')">Linux</button>
+            </div>
+
+            <div id="windows" class="tab-content active">
+                <h3>Android Studio</h3>
+                <ul class="step-list">
+                    <li>Download Android Studio from the <a href="https://developer.android.com/studio" target="_blank">official page</a>, run the installer and let it download the SDK components.</li>
+                    <li><em>Optional:</em> create an emulator in the Device Manager.</li>
+                </ul>
+                <h3>Flutter SDK</h3>
+                <ul class="step-list">
+                    <li>Download the stable Windows release from the <a href="https://docs.flutter.dev/install/manual" target="_blank">Flutter download page</a> and extract it, for example to <code>C:\flutter</code>.</li>
+                    <li>Add <code>C:\flutter\bin</code> to the <strong>Path</strong> environment variable (This PC &gt; Properties &gt; Advanced system settings &gt; Environment Variables).</li>
+                    <li>Open a new Command Prompt and run <code>flutter doctor</code>. Fix anything it reports.</li>
+                </ul>
+                <h3>IDE</h3>
+                <ul class="step-list">
+                    <li>In Android Studio open <strong>File &gt; Settings &gt; Plugins &gt; Marketplace</strong>, install the <strong>Flutter</strong> and <strong>Dart</strong> plugins and restart.</li>
+                </ul>
+                <a href="https://www.youtube.com/watch?v=hfz_AraTk_k&t=1s" target="_blank" class="video-btn">▶ Watch Windows Setup Video</a>
+            </div>
+
+            <div id="mac" class="tab-content">
+                <h3>Android Studio</h3>
+                <ul class="step-list">
+                    <li>Download Android Studio from the <a href="https://developer.android.com/studio" target="_blank">official page</a>, drag it into Applications and complete the setup wizard.</li>
+                </ul>
+                <h3>Flutter SDK</h3>
+                <ul class="step-list">
+                    <li>Download the stable macOS release from the <a href="https://docs.flutter.dev/install/manual" target="_blank">Flutter download page</a> and extract it: <code>tar xf flutter_macos_&lt;version&gt;.tar.xz</code></li>
+                    <li>Add <code>flutter/bin</code> to your PATH in <code>~/.zshrc</code>, then open a new terminal and run <code>flutter doctor</code>.</li>
+                </ul>
+                <h3>Xcode and CocoaPods (for iOS)</h3>
+                <ul class="step-list">
+                    <li>Install Xcode from the Mac App Store, open it once to finish installing components, then run <code>sudo xcodebuild -runFirstLaunch</code>.</li>
+                    <li>Install CocoaPods: <code>sudo gem install cocoapods</code> (or <code>brew install cocoapods</code>).</li>
+                </ul>
+                <h3>IDE</h3>
+                <ul class="step-list">
+                    <li>In Android Studio open <strong>Settings &gt; Plugins &gt; Marketplace</strong>, install <strong>Flutter</strong> and <strong>Dart</strong> and restart.</li>
+                </ul>
+                <a href="https://www.youtube.com/watch?v=f09c-nw15K8" target="_blank" class="video-btn">▶ Watch macOS Setup Video</a>
+            </div>
+
+            <div id="linux" class="tab-content">
+                <h3>Android Studio</h3>
+                <ul class="step-list">
+                    <li>Download Android Studio from the <a href="https://developer.android.com/studio" target="_blank">official page</a>, extract it (<code>tar -xvzf android-studio-*-linux.tar.gz</code>) and run <code>bin/studio.sh</code>.</li>
+                </ul>
+                <h3>Flutter SDK</h3>
+                <ul class="step-list">
+                    <li>Download the stable Linux release from the <a href="https://docs.flutter.dev/install/manual" target="_blank">Flutter download page</a> and extract it: <code>tar xf flutter_linux_&lt;version&gt;.tar.xz</code></li>
+                    <li>Add <code>flutter/bin</code> to your PATH, then run <code>flutter doctor</code>.</li>
+                </ul>
+                <h3>IDE</h3>
+                <ul class="step-list">
+                    <li>In Android Studio open <strong>File &gt; Settings &gt; Plugins &gt; Marketplace</strong>, install <strong>Flutter</strong> and <strong>Dart</strong> and restart.</li>
+                </ul>
+                <a href="https://www.youtube.com/watch?v=e63OlW_2gpQ" target="_blank" class="video-btn">▶ Watch Linux Setup Video</a>
+            </div>
+        </div>
+
+        <h3>Open and run the app</h3>
+        <p>Set up the backend first (<a href="#backend-setup">section 13</a>) and create the app's configuration file (<a href="#api-customization">section 8</a>). Then:</p>
+<pre><code>cd Flutter-App
+flutter pub get
+flutter run --dart-define-from-file=config/app_config.json</code></pre>
+        <p>Generated code (models and translations) is already included. Regenerate it only after you change models or translation files:</p>
+<pre><code>dart run build_runner build --delete-conflicting-outputs
+flutter gen-l10n</code></pre>
+    </section>
+
+    <section id="change-package-name">
+        <h2>3. Change Package Name and Bundle ID</h2>
+        <p>Every app needs a unique identifier, for example <code>com.youracademy.app</code>. Choose it <strong>before</strong> you set up Firebase (Firebase apps are registered by this identifier) and before your first Google Play upload (it can never change afterwards). The package ships with <code>com.lumora.app</code>.</p>
+
+        <h3>Android</h3>
+        <table class="doc-table">
+            <thead><tr><th>File</th><th>Change</th></tr></thead>
+            <tbody>
+                <tr><td><code>android/app/build.gradle.kts</code></td><td><code>namespace</code> and <code>applicationId</code></td></tr>
+                <tr><td><code>android/app/src/main/kotlin/com/lumora/app/MainActivity.kt</code></td><td>Move the file to the folder that matches your id (for example <code>kotlin/com/youracademy/app/</code>) and change its first line to <code>package com.youracademy.app</code></td></tr>
+            </tbody>
+        </table>
+
+        <h3>iOS</h3>
+        <ul class="step-list">
+            <li>Open <code>ios/Runner.xcworkspace</code> in Xcode.</li>
+            <li>Select the <strong>Runner</strong> target &gt; <strong>Signing &amp; Capabilities</strong>, choose your <strong>Team</strong> and enter your <strong>Bundle Identifier</strong>.</li>
+            <li>Do the same for the <strong>RunnerTests</strong> target (use <code>&lt;your bundle id&gt;.RunnerTests</code>).</li>
+        </ul>
+
+        <div class="alert">
+            <strong>Tip:</strong> the Dart package name in <code>pubspec.yaml</code> is internal and never shown to learners. Leave it as it is; renaming it means updating every <code>package:</code> import.
+        </div>
+    </section>
+
+    <section id="firebase-setup">
+        <h2>4. Firebase Setup</h2>
+        <p>Firebase provides push notifications, crash reports and the Google part of Google sign-in. Email and password accounts, sessions and everything else are handled by your own backend, not by Firebase.</p>
+        <div class="alert-warning">
+            <strong>You must use your own Firebase project.</strong> The package ships <strong>placeholder</strong> Firebase files with values such as <code>YOUR_ANDROID_API_KEY</code> and <code>your-firebase-project-id</code>. They let the project compile, but push notifications, crash reports and Google sign-in will not work until you replace them:
+            <ul class="step-list" style="margin-top:8px;">
+                <li><code>Flutter-App/android/app/google-services.json</code></li>
+                <li><code>Flutter-App/ios/Runner/GoogleService-Info.plist</code></li>
+            </ul>
+            No Firebase project of ours is included, so your app never connects to our accounts.
+        </div>
+
+        <h3>Step 1: Create a Firebase project</h3>
+        <ul class="step-list">
+            <li>Open the <a href="https://console.firebase.google.com" target="_blank">Firebase console</a> and click <strong>Create a project</strong>. Enter a name and accept the terms.</li>
+            <li>Choose whether to enable Gemini and Google Analytics (Lumora needs neither), then click <strong>Create project</strong>.</li>
+        </ul>
+        <div class="image-gallery">
+            <img src="assets/firebase_project_creation_02.jpg" alt="Firebase project creation" loading="lazy">
+            <img src="assets/firebase_project_creation_03.jpg" alt="Firebase Google Analytics option" loading="lazy">
+            <img src="assets/firebase_project_creation_04.jpg" alt="Firebase create project" loading="lazy">
+        </div>
+
+        <h3>Step 2: Add the Android app</h3>
+        <ul class="step-list">
+            <li>In the project, click <strong>Add app &gt; Android</strong> and enter your package name from <a href="#change-package-name">section 3</a>.</li>
+            <li>Download <code>google-services.json</code> and replace <code>Flutter-App/android/app/google-services.json</code>.</li>
+            <li>Add your SHA-1 and SHA-256 fingerprints now if you use Google sign-in (<a href="#social-sign-in">section 5</a>), then download the file again.</li>
+        </ul>
+
+        <h3>Step 3: Add the iOS app (optional)</h3>
+        <ul class="step-list">
+            <li>Click <strong>Add app &gt; Apple</strong>, enter your bundle ID, download <code>GoogleService-Info.plist</code> and drag it into <code>Runner/</code> in Xcode (tick "Copy items if needed"), replacing the placeholder.</li>
+        </ul>
+
+        <h3>Step 4: Turn on what you use</h3>
+        <ul class="step-list">
+            <li><strong>Crashlytics:</strong> open <strong>Run &gt; Crashlytics</strong> and click <strong>Enable</strong>. Release builds upload their R8 mapping file automatically.</li>
+            <li><strong>Google sign-in:</strong> open <strong>Build &gt; Authentication &gt; Sign-in method</strong> and enable <strong>Google</strong> (details in <a href="#social-sign-in">section 5</a>).</li>
+        </ul>
+        <div class="image-gallery">
+            <img src="assets/provider_select_page.jpg" alt="Firebase sign-in providers, with Google" loading="lazy">
+        </div>
+
+        <h3>Step 5: Service account for the backend</h3>
+        <p>The backend sends push notifications with a Firebase service account: <strong>Project settings &gt; Service accounts &gt; Generate new private key</strong>. Put the whole JSON on one line in the backend's <code>FCM_SERVICE_ACCOUNT_JSON</code> (<a href="#backend-setup">section 13</a>). Keep this file secret; it is never part of the app.</p>
+
+        <a href="https://www.youtube.com/results?search_query=add+firebase+to+flutter+android+app" target="_blank" class="video-btn">▶ Firebase + Flutter video tutorials</a>
+    </section>
+
+    <section id="social-sign-in">
+        <h2>5. Google Sign-In and Push Notifications</h2>
+        <p>Firebase is your own project, under your own Google account and Google's terms (see <a href="#third-party-services">Third-Party Services</a>). Every key below comes from your account.</p>
+
+        <h3>Google sign-in</h3>
+        <p>The app asks Google for an ID token and sends it to your backend (<code>POST /auth/google</code>), which checks it and starts a normal Lumora session.</p>
+        <ul class="step-list">
+            <li><strong>Fingerprints:</strong> Google sign-in only works for builds signed with a key registered in Firebase. In <strong>Project settings &gt; Your apps &gt; Android</strong>, click <strong>Add fingerprint</strong> and add the SHA-1 and SHA-256 of every key you use:
+<pre><code># the shared debug key (debug and profile builds)
+keytool -list -v -keystore android/app/lumora-debug.jks -alias lumora -storepass lumora-debug
+
+# your upload key (section 12)
+keytool -list -v -keystore ~/upload-keystore.jks -alias upload</code></pre>
+                Also add the <strong>Play App Signing</strong> key from Play Console (<strong>Test and release &gt; App integrity &gt; App signing</strong>): Google re-signs downloads from Play with it. Download <code>google-services.json</code> again afterwards.</li>
+            <li><strong>Web client ID:</strong> after enabling Google in Authentication, copy the <strong>Web client ID</strong> (in <code>google-services.json</code> it is the <code>oauth_client</code> entry with <code>"client_type": 3</code>). Put it in the app's <code>GOOGLE_WEB_CLIENT_ID</code> (<a href="#api-customization">section 8</a>) <strong>and</strong> in the backend's <code>GOOGLE_CLIENT_IDS</code>. The two must match, or the backend refuses the sign-in.</li>
+            <li><strong>iOS:</strong> add the <code>REVERSED_CLIENT_ID</code> from <code>GoogleService-Info.plist</code> as a URL scheme in Xcode (<strong>Runner &gt; Info &gt; URL Types</strong>).</li>
+        </ul>
+
+        <h3>Push notifications</h3>
+        <ul class="step-list">
+            <li><strong>Android:</strong> Cloud Messaging works with <code>google-services.json</code> alone. On Android 13 and newer the app asks for the notification permission after sign-in.</li>
+            <li><strong>iOS:</strong> upload an APNs key to Firebase (<strong>Project settings &gt; Cloud Messaging &gt; Apple app configuration</strong>), and add the <strong>Push Notifications</strong> and <strong>Background Modes &gt; Remote notifications</strong> capabilities in Xcode. Test on a real device; the simulator cannot receive push.</li>
+            <li><strong>Backend:</strong> set <code>FCM_SERVICE_ACCOUNT_JSON</code> (section 4, step 5) and make sure the minute cron runs (<a href="#backend-setup">section 13</a>); push is delivered by the cron.</li>
+            <li>Every install subscribes to the topic <code>all</code>, so the admin panel's "all learners" notifications need no token list. Notifications to one course's learners or to inactive learners use the device tokens the app registers after sign-in.</li>
+            <li>Tapping a notification opens the in-app Notifications inbox.</li>
+        </ul>
+    </section>
+
+    <section id="change-app-name">
+        <h2>6. Change App Name</h2>
+        <p>Two names exist: the one under the icon on the phone, which is built into the app, and the academy name shown inside the app, which comes from your backend.</p>
+        <table class="doc-table">
+            <thead><tr><th>Where</th><th>File or setting</th></tr></thead>
+            <tbody>
+                <tr><td>Android home screen</td><td><code>android:label="Lumora"</code> in <code>android/app/src/main/AndroidManifest.xml</code></td></tr>
+                <tr><td>iOS home screen</td><td><code>CFBundleDisplayName</code> in <code>ios/Runner/Info.plist</code></td></tr>
+                <tr><td>Inside the app</td><td>Admin panel &gt; Settings &gt; General (the academy name). No rebuild needed</td></tr>
+            </tbody>
+        </table>
+    </section>
+
+    <section id="change-app-icon">
+        <h2>7. App Icon, Splash and Brand Colours</h2>
+        <h3>App icon</h3>
+        <ul class="step-list">
+            <li><strong>Android:</strong> in Android Studio, right-click <code>android/app/src/main/res</code> &gt; <strong>New &gt; Image Asset</strong>. Choose your 1024 &times; 1024 image; it generates every <code>mipmap-*</code> size, including the adaptive icon.</li>
+            <li><strong>iOS:</strong> replace the images in <code>ios/Runner/Assets.xcassets/AppIcon.appiconset</code> (Xcode accepts a single 1024 &times; 1024 image).</li>
+        </ul>
+
+        <h3>Splash screen</h3>
+        <ul class="step-list">
+            <li><strong>Android:</strong> <code>android/app/src/main/res/drawable/launch_background.xml</code> and <code>drawable-v21/launch_background.xml</code>.</li>
+            <li><strong>iOS:</strong> <code>ios/Runner/Base.lproj/LaunchScreen.storyboard</code> and the <code>LaunchImage</code> asset.</li>
+        </ul>
+
+        <h3>Brand colours (no rebuild)</h3>
+        <p>Set the <strong>Main colour</strong> and <strong>Accent colour</strong> in the admin panel (<strong>Settings &gt; Branding</strong>, also step 1 of the first-run setup). The app builds its whole light and dark palette from these two values the next time it starts. Example: Main <code>#0F766E</code> (teal) and Accent <code>#E2725B</code> (coral) are the defaults.</p>
+        <p>Without these settings the app uses its built-in palette in <code>lib/src/core/theme/src/theme_extensions/src/colors/semantic.dart</code>, for example:</p>
+<pre><code>static const Color teal = Color(0xFF0D6E6E);  // #0D6E6E, brand primary
+static const Color coral = Color(0xFFFF6B4A); // #FF6B4A, accent</code></pre>
+        <p>The logo shown inside the app is also set in Settings &gt; Branding.</p>
+    </section>
+
+    <section id="api-customization">
+        <h2>8. Connect the App to Your Backend</h2>
+        <p>The app's build settings live in one file. Create it from the example:</p>
+<pre><code>cd Flutter-App
+cp config/app_config.example.json config/app_config.json</code></pre>
+<pre><code>{
+  "API_BASE_URL": "https://api.your-domain.com",
+  "TENANT": "acme",
+  "GOOGLE_WEB_CLIENT_ID": "000000000000-xxxxxxxxxxxxxxxx.apps.googleusercontent.com"
+}</code></pre>
+        <table class="doc-table">
+            <thead><tr><th>Key</th><th>Meaning</th></tr></thead>
+            <tbody>
+                <tr><td><code>API_BASE_URL</code></td><td>The address of your backend: <code>https</code>, no trailing slash. For a local backend on an Android emulator use <code>http://10.0.2.2:3000</code>; on a real phone use your computer's network address (<code>http://192.168.x.x:3000</code>). Release builds need <code>https</code>.</td></tr>
+                <tr><td><code>TENANT</code></td><td>Your academy slug, the <code>DEFAULT_TENANT_SLUG</code> you chose on the backend. Sent as the <code>X-Tenant</code> header.</td></tr>
+                <tr><td><code>GOOGLE_WEB_CLIENT_ID</code></td><td>The Firebase project's Web client ID (<a href="#social-sign-in">section 5</a>). Leave the example value if you do not use Google sign-in.</td></tr>
+            </tbody>
+        </table>
+        <p>Pass the file to every run and build:</p>
+<pre><code>flutter run --dart-define-from-file=config/app_config.json</code></pre>
+        <div class="alert">
+            <strong>Everything else comes from the backend.</strong> The academy name, logo, colours, languages, payment methods, feature switches (exams, live classes, downloads), support email and legal pages are read from <code>GET /app/config</code> and cached on the phone. Change them in the admin panel; no new build is needed.
+        </div>
+        <p><code>config/app_config.json</code> is listed in <code>.gitignore</code>, so your values stay out of version control. A build without the file uses the placeholders in <code>lib/src/core/config/build_config.dart</code> and cannot reach any server.</p>
+    </section>
+
+    <section id="localization">
+        <h2>9. Languages</h2>
+        <p>The app ships five languages: English (<code>en</code>), Bengali (<code>bn</code>), Hindi (<code>hi</code>), Arabic (<code>ar</code>, right-to-left) and Spanish (<code>es</code>). In the admin panel (<strong>Settings &gt; General &gt; Languages</strong>) you choose which ones learners can pick and which one a new install starts with. The admin panel itself is in English.</p>
+
+        <h3>What a language file looks like</h3>
+        <p>Each language is one file in <code>lib/l10n/</code>: <code>app_en.arb</code>, <code>app_bn.arb</code> and so on. Every key has the same name in every file. A plain text and a text with a value inside:</p>
+<pre><code>{
+  "@@locale": "en",
+  "commonRetry": "Retry",
+  "payStoreSubtitle": "Pay with your {store} account, in your local currency",
+  "@payStoreSubtitle": {
+    "placeholders": { "store": { "type": "String" } }
+  }
+}</code></pre>
+
+        <h3>Add a language (example: French)</h3>
+        <ul class="step-list">
+            <li>Copy <code>lib/l10n/app_en.arb</code> to <code>lib/l10n/app_fr.arb</code>, change <code>"@@locale": "en"</code> to <code>"@@locale": "fr"</code> and translate every value (not the keys, not the <code>{placeholders}</code>):
+<pre><code>{
+  "@@locale": "fr",
+  "commonRetry": "Réessayer",
+  "payStoreSubtitle": "Payez avec votre compte {store}, dans votre devise locale"
+}</code></pre></li>
+            <li>Add the language to the picker list in <code>lib/src/core/localization/locale_cubit.dart</code>:
+<pre><code>static const List&lt;AppLanguage&gt; supported = [
+  AppLanguage('en', 'English', 'English'),
+  // ...
+  AppLanguage('fr', 'French', 'Français'),
+];</code></pre></li>
+            <li>Generate the code and run the app:
+<pre><code>flutter gen-l10n
+flutter run --dart-define-from-file=config/app_config.json</code></pre></li>
+            <li>Turn the new language on in the admin panel (<strong>Settings &gt; General &gt; Languages</strong>). Course titles and descriptions are your own content; you write them in the admin panel.</li>
+        </ul>
+
+        <h3>Remove a language</h3>
+        <ul class="step-list">
+            <li>The quick way: turn it off in the admin panel. Learners no longer see it.</li>
+            <li>To remove it from the app: delete its <code>app_xx.arb</code> file and its line in <code>locale_cubit.dart</code>, then run <code>flutter gen-l10n</code>.</li>
+        </ul>
+    </section>
+
+    <section id="web-payments">
+        <h2>10. Web Payment Gateways (Stripe, Flutterwave, Razorpay)</h2>
+        <p>Learners pay on the gateway's own hosted page, shown inside the app. Card data never reaches your server or the app. Each gateway is optional; turn on one or more. Every account is your own, and each provider charges its own fee per payment.</p>
+
+        <h3>Step 1: Enter the keys</h3>
+        <p>In the admin panel open <strong>Settings &gt; Payments</strong>, open the gateway and enter its keys. Keys saved here are encrypted with the backend's <code>SETTINGS_ENCRYPTION_KEY</code> (set it first; <a href="#backend-setup">section 13</a>). Alternatively, set them as backend environment variables.</p>
+        <table class="doc-table">
+            <thead><tr><th>Gateway</th><th>Fields</th><th>Where to find them</th><th>Environment variables</th></tr></thead>
+            <tbody>
+                <tr><td>Stripe</td><td>Secret key, webhook secret</td><td>Developers &gt; API keys &gt; Secret key (<code>sk_test_&hellip;</code> / <code>sk_live_&hellip;</code>). The webhook secret (<code>whsec_&hellip;</code>) comes from step 2</td><td><code>STRIPE_SECRET_KEY</code>, <code>STRIPE_WEBHOOK_SECRET</code></td></tr>
+                <tr><td>Flutterwave</td><td>Secret key, webhook secret hash</td><td>Settings &gt; API keys &gt; Secret key. The secret hash is a long random string you make up (step 2)</td><td><code>FLUTTERWAVE_SECRET_KEY</code>, <code>FLUTTERWAVE_WEBHOOK_HASH</code></td></tr>
+                <tr><td>Razorpay</td><td>Key ID, key secret, webhook secret</td><td>Account &amp; Settings &gt; API Keys &gt; Generate key. The webhook secret is a long random string you make up (step 2)</td><td><code>RAZORPAY_KEY_ID</code>, <code>RAZORPAY_KEY_SECRET</code>, <code>RAZORPAY_WEBHOOK_SECRET</code></td></tr>
+            </tbody>
+        </table>
+        <p>Click <strong>Test</strong> next to the gateway: the backend makes one read-only call to the provider and reports whether the keys work.</p>
+
+        <h3>Step 2: Add the webhook</h3>
+        <p>Webhooks settle an order even when the learner closes the app right after paying, and they report refunds. The admin panel shows each gateway's webhook URL: <code>https://api.your-domain.com/webhooks/&lt;gateway&gt;/&lt;your academy slug&gt;</code>, for example <code>https://api.your-domain.com/webhooks/stripe/acme</code>. Set the backend's <code>PUBLIC_API_URL</code> first so the URL is right. Test mode and live mode each have their own keys and webhook.</p>
+        <ul class="step-list">
+            <li><strong>Stripe:</strong> Developers &gt; Webhooks &gt; <strong>Add endpoint</strong> (in Workbench: <strong>Add destination</strong>). URL: the one shown in the admin panel. Events: <code>checkout.session.completed</code>, <code>checkout.session.async_payment_succeeded</code>, <code>checkout.session.async_payment_failed</code>, <code>checkout.session.expired</code>, <code>charge.refunded</code>, <code>charge.refund.updated</code>, <code>refund.updated</code>, <code>refund.failed</code>. Save, reveal the <strong>Signing secret</strong> and paste it as the webhook secret.</li>
+            <li><strong>Flutterwave:</strong> Settings &gt; Webhooks. URL: the one shown. <strong>Secret hash</strong>: your random string (the same one as in step 1). Tick <em>Receive webhook response in JSON format</em>, <em>Enable webhook retries</em> and <em>Enable webhook for failed transactions</em>.</li>
+            <li><strong>Razorpay:</strong> Account &amp; Settings &gt; Webhooks &gt; <strong>Add New Webhook</strong>. URL: the one shown. Secret: your random string. Active events: <code>payment_link.paid</code>, <code>payment_link.cancelled</code>, <code>payment_link.expired</code>, <code>payment.failed</code>, <code>refund.processed</code>, <code>refund.failed</code>.</li>
+        </ul>
+
+        <h3>Step 3: Turn it on</h3>
+        <ul class="step-list">
+            <li>Switch the gateway on in Settings &gt; Payments. The app's Payment page lists it at once.</li>
+            <li>Leave <code>PAYMENT_SIMULATOR_ENABLED</code> unset in production. It exists only for local testing and lets orders be marked paid without money.</li>
+            <li>Refunds: open the order in <strong>Orders</strong> and refund all or some items. The refund goes back through the gateway, and the learner loses access to the refunded course.</li>
+        </ul>
+
+        <div class="alert">
+            <strong>Safety rules built in:</strong> nothing in a webhook body is trusted; the backend reads the payment again from the provider. Each event is processed once. If a webhook never arrives, the minute cron asks the provider about open payments, so orders still settle. Money that arrives for an order that can no longer take it is refunded automatically, or flagged on the order for you.
+        </div>
+    </section>
+
+    <section id="store-payments">
+        <h2>11. Google Play In-App Purchases (RevenueCat)</h2>
+        <p>On Android, learners can buy a course with Google Play. Stores sell from a catalogue of products with prices set per country, so a course bought this way is paid with a <strong>store product</strong> (for example <code>course_999</code> at USD 9.99) instead of the course's own price. Many courses can share one product. RevenueCat connects the app to Google Play and confirms every purchase to your backend.</p>
+
+        <div class="alert-warning">
+            <strong>Your accounts, your costs:</strong> you need your own Google Play Developer account, your own products in Play Console and your own RevenueCat account. Google keeps a service fee on every purchase; RevenueCat is free up to a monthly revenue limit and then takes a share. Apple In-App Purchase uses the same flow with App Store Connect products, but Android is the tested target; test iOS purchases fully before you sell there.
+        </div>
+
+        <h3>Step 1: Create the products in Play Console</h3>
+        <ul class="step-list">
+            <li>Upload a build of the app to a testing track first (internal testing is enough): Play Console only allows products for an app that has the <code>BILLING</code> permission, which the app already declares.</li>
+            <li>Open <strong>Monetize with Play &gt; Products &gt; One-time products</strong> and create a few products at different prices, for example <code>course_299</code>, <code>course_499</code>, <code>course_999</code>, <code>course_1499</code>, <code>course_1999</code>. Set each price and activate it. Google converts the price for each country.</li>
+        </ul>
+
+        <h3>Step 2: Set up RevenueCat</h3>
+        <ul class="step-list">
+            <li>Create a project at <a href="https://app.revenuecat.com" target="_blank">app.revenuecat.com</a> and add a <strong>Google Play</strong> app with your package name. Upload a Google Play service account key as RevenueCat's setup asks, so it can read your purchases.</li>
+            <li>Import the products (<strong>Product catalog &gt; Products</strong>) and keep them <strong>consumable</strong>.</li>
+            <li>Copy two keys from <strong>Project settings &gt; API keys</strong>: the app's <strong>public SDK key</strong> (<code>goog_&hellip;</code>) and a <strong>secret API key</strong> (<code>sk_&hellip;</code>, version 1).</li>
+        </ul>
+
+        <h3>Step 3: Enter the keys</h3>
+        <p>In the admin panel open <strong>Settings &gt; Payments &gt; App stores &gt; Google Play</strong> and enter:</p>
+        <table class="doc-table">
+            <thead><tr><th>Field</th><th>Value</th><th>Environment variable</th></tr></thead>
+            <tbody>
+                <tr><td>Secret key</td><td>RevenueCat secret API key (<code>sk_&hellip;</code>). Server only</td><td><code>REVENUECAT_SECRET_KEY</code></td></tr>
+                <tr><td>SDK key</td><td>RevenueCat public SDK key (<code>goog_&hellip;</code>). Sent to the app</td><td><code>REVENUECAT_GOOGLE_SDK_KEY</code> (<code>REVENUECAT_APPLE_SDK_KEY</code> for iOS)</td></tr>
+                <tr><td>Webhook authorization</td><td>A long random string you make up (step 4)</td><td><code>REVENUECAT_WEBHOOK_AUTH</code></td></tr>
+            </tbody>
+        </table>
+        <p>Saving keys in the admin panel needs the backend's <code>SETTINGS_ENCRYPTION_KEY</code>; the environment variables work without it. Switch Google Play on. Its display name and logo (shown on the app's Payment page) can be changed on the same screen.</p>
+
+        <h3>Step 4: Add the webhook</h3>
+        <p>In RevenueCat open <strong>Integrations &gt; Webhooks &gt; Add</strong>:</p>
+        <ul class="step-list">
+            <li><strong>Webhook URL:</strong> <code>https://api.your-domain.com/webhooks/revenuecat/&lt;your academy slug&gt;</code> (shown in the admin panel). One URL serves both stores.</li>
+            <li><strong>Authorization header value:</strong> the same random string as the Webhook authorization field.</li>
+        </ul>
+        <p>The webhook settles a purchase when the app closed before it could confirm, and removes access when a purchase is refunded from the store.</p>
+
+        <h3>Step 5: Add the store products in the admin panel</h3>
+        <ul class="step-list">
+            <li>Open <strong>Sales &gt; Store products</strong> and add each product ID exactly as in Play Console, with its <strong>reference price</strong> in your academy currency (the price in the store's base country). The reference price is only used to match products to courses and for your reports; Google decides what each buyer pays.</li>
+            <li>Products are archived, never deleted, so past orders keep their product.</li>
+        </ul>
+
+        <h3>Payment methods per course</h3>
+        <ul class="step-list">
+            <li>Every course accepts all payment methods that are switched on, including ones you turn on later. Open a course's <strong>Pricing</strong> step to remove a method for that course (for example, Google Play only, or web checkout only) and add it back any time.</li>
+            <li>Google Play uses the store product whose reference price is closest to the course price (a tie takes the cheaper one), so it follows price changes automatically. Pick a different product on the Pricing step to override it.</li>
+            <li>A cart only offers the methods that every course in it accepts. Google Play is offered for a single course at a time; coupons and sale prices do not apply to store purchases.</li>
+        </ul>
+
+        <h3>Testing</h3>
+        <ul class="step-list">
+            <li>Add your Google account as a <strong>licence tester</strong> (Play Console &gt; Settings &gt; License testing) and install the app from the testing track. Test purchases are not charged.</li>
+            <li>The Payment page shows Google's price in the tester's currency. After paying, the course unlocks within a few seconds. A purchase appears in RevenueCat's dashboard and in the admin panel's Orders.</li>
+        </ul>
+
+        <h3>How it stays correct</h3>
+        <p>The app's word and the webhook body are never trusted: the backend reads every purchase back from RevenueCat and settles the order by the store transaction ID, so one purchase can never unlock two courses. A purchase that completes after its order was closed (for example a Play "pending" purchase paid days later) reopens the order within 7 days; otherwise it is flagged on the order for a refund from the store console.</p>
+    </section>
+
+    <section id="build-and-release">
+        <h2>12. Build and Release</h2>
+        <h3>Version number</h3>
+        <p>Set <code>version:</code> in <code>pubspec.yaml</code>, for example <code>1.0.0+1</code>: <code>1.0.0</code> is the version name learners see and <code>1</code> is the build number. Raise the build number for every upload to Google Play. Android reads both from <code>pubspec.yaml</code>.</p>
+
+        <h3>Android: create an upload keystore</h3>
+<pre><code>keytool -genkey -v -keystore ~/upload-keystore.jks -keyalg RSA \
+  -keysize 2048 -validity 10000 -alias upload</code></pre>
+        <p>Back up the keystore file and its passwords. If you lose them, you must ask Google to reset your upload key.</p>
+
+        <h3>Android: key.properties</h3>
+<pre><code>cp android/key.properties.example android/key.properties</code></pre>
+<pre><code>storePassword=your-store-password
+keyPassword=your-key-password
+keyAlias=upload
+storeFile=/Users/you/upload-keystore.jks</code></pre>
+        <p><code>android/app/build.gradle.kts</code> reads this file in its <code>signingConfigs</code> block and signs release builds with it. <code>key.properties</code> and your keystore are git-ignored; never share them. Without <code>key.properties</code>, a release build is signed with the public debug key <code>android/app/lumora-debug.jks</code> and Gradle prints a warning: such a build installs and runs, but <strong>never upload it to Google Play</strong>. Debug and profile builds always use that debug key, so Google sign-in works in debug once its SHA-1 is registered in Firebase.</p>
+
+        <h3>Android: build</h3>
+        <table class="doc-table">
+            <thead><tr><th>Purpose</th><th>Command</th></tr></thead>
+            <tbody>
+                <tr><td>Google Play (App Bundle)</td><td><code>flutter build appbundle --release --obfuscate --split-debug-info=build/symbols --dart-define-from-file=config/app_config.json</code></td></tr>
+                <tr><td>APKs per CPU, to share yourself</td><td><code>flutter build apk --release --split-per-abi --obfuscate --split-debug-info=build/symbols --dart-define-from-file=config/app_config.json</code></td></tr>
+                <tr><td>Debug APK</td><td><code>flutter build apk --debug --dart-define-from-file=config/app_config.json</code></td></tr>
+            </tbody>
+        </table>
+        <p>Output: <code>build/app/outputs/bundle/release/app-release.aab</code> (upload this to Play) and <code>build/app/outputs/flutter-apk/</code>. Keep the <code>build/symbols</code> folder for every released version: without it, crash stack traces cannot be read. Upload it to Crashlytics with <code>firebase crashlytics:symbols:upload --app=&lt;your Firebase Android app ID&gt; build/symbols</code>.</p>
+
+        <h3>iOS: build</h3>
+        <ul class="step-list">
+            <li>Run <code>cd ios &amp;&amp; pod install &amp;&amp; cd ..</code>. The minimum iOS version is 15.0 (already set in the Podfile and the Xcode project).</li>
+            <li>In Xcode, select your Team and bundle ID (<a href="#change-package-name">section 3</a>) and add the capabilities from <a href="#social-sign-in">section 5</a> if you use push.</li>
+            <li>Run <code>flutter build ipa --release --dart-define-from-file=config/app_config.json</code> and upload <code>build/ios/ipa/*.ipa</code> with Xcode's Organizer or the Transporter app.</li>
+        </ul>
+
+        <h3>Test on a real device</h3>
+        <ul class="step-list">
+            <li>Sign in with email and with Google, buy a course with a test payment, play a lesson, take a quiz and send yourself a push notification from the admin panel.</li>
+            <li>Release builds only talk to <code>https</code> addresses. Make sure <code>API_BASE_URL</code> uses https before you publish.</li>
+        </ul>
+    </section>
+
+    <section id="backend-setup">
+        <h2>13. Backend Setup (NestJS)</h2>
+        <p>The backend is the heart of Lumora: the app and the admin panel both talk to it. It needs Node.js 20.19 or newer and PostgreSQL 15 or newer. The commands below are for a Linux server (Ubuntu); they work the same on macOS for local testing.</p>
+
+        <h3>Step 1: Install</h3>
+<pre><code>cd Backend
+npm ci</code></pre>
+
+        <h3>Step 2: Create the database</h3>
+<pre><code>sudo -u postgres psql
+CREATE USER lumora WITH PASSWORD 'choose-a-strong-password';
+CREATE DATABASE lumora OWNER lumora;
+\q</code></pre>
+        <p>The tables are created by the migrations in step 4. Any hosted PostgreSQL (Supabase, Neon, Amazon RDS, DigitalOcean) works too; use the connection string it gives you.</p>
+
+        <h3>Step 3: Configure .env</h3>
+<pre><code>cp .env.example .env</code></pre>
+        <p>Every variable is explained in <code>.env.example</code>. The ones you must look at:</p>
+        <table class="doc-table">
+            <thead><tr><th>Variable</th><th>Example</th><th>What it is</th></tr></thead>
+            <tbody>
+                <tr><td><code>NODE_ENV</code></td><td><code>production</code></td><td>Use <code>production</code> on your server</td></tr>
+                <tr><td><code>PORT</code></td><td><code>3000</code></td><td>Port the API listens on</td></tr>
+                <tr><td><code>DATABASE_URL</code></td><td><code>postgresql://lumora:password@localhost:5432/lumora</code></td><td><strong>Required.</strong> Your database</td></tr>
+                <tr><td><code>JWT_SECRET</code></td><td>output of <code>openssl rand -base64 48</code></td><td><strong>Required.</strong> Signs sign-in tokens; 32 characters or more</td></tr>
+                <tr><td><code>PUBLIC_API_URL</code></td><td><code>https://api.your-domain.com</code></td><td>The public address of the API, used in webhook URLs and certificate links</td></tr>
+                <tr><td><code>DEFAULT_TENANT_SLUG</code></td><td><code>acme</code></td><td>Your academy's short name (lowercase letters, digits, dashes). <strong>Must match the app's <code>TENANT</code></strong> (<a href="#api-customization">section 8</a>)</td></tr>
+                <tr><td><code>SETUP_OWNER_EMAIL</code>, <code>SETUP_OWNER_PASSWORD</code></td><td><code>owner@your-domain.com</code>, a long password</td><td>Your first admin account, created by step 4</td></tr>
+                <tr><td><code>SETUP_TENANT_NAME</code>, <code>SETUP_CURRENCY</code>, <code>SETUP_BUSINESS_MODE</code></td><td><code>Acme Academy</code>, <code>USD</code>, <code>academy</code></td><td>Optional. Academy name, currency (locked after the first order) and mode: <code>academy</code> (one school) or <code>marketplace</code> (many instructors and organizations)</td></tr>
+                <tr><td><code>SETTINGS_ENCRYPTION_KEY</code></td><td>output of <code>openssl rand -base64 48</code></td><td>Needed to save payment keys, an SMTP password or a Bunny library in the admin panel. Keep it stable and backed up</td></tr>
+                <tr><td><code>CRON_SECRET</code></td><td>a long random string</td><td>Protects the minute cron route (step 7)</td></tr>
+                <tr><td><code>GOOGLE_CLIENT_IDS</code></td><td>your Web client ID</td><td>For Google sign-in. <strong>Must contain the app's <code>GOOGLE_WEB_CLIENT_ID</code></strong> (<a href="#social-sign-in">section 5</a>)</td></tr>
+                <tr><td><code>FCM_SERVICE_ACCOUNT_JSON</code></td><td>the service account JSON on one line</td><td>For push notifications (<a href="#firebase-setup">section 4</a>)</td></tr>
+                <tr><td><code>S3_*</code>, <code>MEDIA_BUCKET</code>, <code>PUBLIC_MEDIA_BUCKET</code>, <code>PUBLIC_MEDIA_BASE_URL</code></td><td>see step 10</td><td>File storage for uploads</td></tr>
+                <tr><td><code>SMTP_HOST</code>, <code>SMTP_PORT</code>, <code>SMTP_USER</code>, <code>SMTP_PASS</code>, <code>SMTP_FROM</code></td><td>your mail provider's values</td><td>Password-reset and verification emails (step 11)</td></tr>
+                <tr><td><code>TRUST_PROXY</code></td><td><code>1</code> behind nginx</td><td>So rate limits see the real client address (step 9)</td></tr>
+            </tbody>
+        </table>
+        <p>The server refuses to start when <code>DATABASE_URL</code> or <code>JWT_SECRET</code> is missing or a value is malformed, and tells you which one.</p>
+
+        <h3>Step 4: Build and create the database tables</h3>
+<pre><code>npm run build
+npm run db:migrate</code></pre>
+        <p>This is the real output on an empty database:</p>
+        <div class="terminal">&gt; lumora-backend@1.0.0 db:migrate
+&gt; node scripts/db.js migrate
+
+applied 0001_platform.sql
+applied 0002_catalogue.sql
+applied 0003_assessment.sql
+<span class="t-dim">... (one line per migration file)</span>
+applied 0055_course_payment_methods.sql
+<span class="t-ok">54 migration(s) applied</span>
+created  tenant acme                                <span class="t-note">1</span>
+created  platform settings (academy, USD)
+created  platform seller
+created  user owner@your-domain.com                 <span class="t-note">2</span>
+created  owner role for owner@your-domain.com
+
+Set DEFAULT_TENANT_SLUG=acme for the API (or send "X-Tenant: acme"), then sign in to the console as owner@your-domain.com.</div>
+        <ol class="annot">
+            <li>Your academy is created from <code>DEFAULT_TENANT_SLUG</code>, <code>SETUP_TENANT_NAME</code> and <code>SETUP_CURRENCY</code>.</li>
+            <li>Your owner account is created from <code>SETUP_OWNER_EMAIL</code> and <code>SETUP_OWNER_PASSWORD</code>. Use it to sign in to the admin panel.</li>
+        </ol>
+        <p>Running it again is safe. It applies only new migration files and never overwrites the owner or the password:</p>
+        <div class="terminal">database is up to date
+owner account ready: owner@your-domain.com (acme), nothing to create</div>
+
+        <h3>Step 5: Start and check</h3>
+<pre><code>npm run start:prod</code></pre>
+        <div class="terminal">&gt; lumora-backend@1.0.0 start:prod
+&gt; node dist/main.js
+
+[Nest] 54634  - 11/23/2026, 11:17:02 PM     LOG [NestFactory] Starting Nest application...
+<span class="t-warn">[Nest] 54634  - 11/23/2026, 11:17:02 PM    WARN [MediaUrlService] S3 is not configured: uploaded lesson files will have no link</span>   <span class="t-note">1</span>
+[Nest] 54634  - 11/23/2026, 11:17:02 PM     LOG [NestApplication] Nest application successfully started +2ms
+<span class="t-ok">[Nest] 54634  - 11/23/2026, 11:17:02 PM     LOG [Bootstrap] Lumora backend listening on 0.0.0.0:3000 [production]</span>   <span class="t-note">2</span></div>
+        <ol class="annot">
+            <li>Normal until you set up storage in step 10. Other optional services log a similar warning while they are not configured.</li>
+            <li>The API is running. (Between these lines Nest lists every route it mapped; that is normal.)</li>
+        </ol>
+        <h4>Check it in a terminal</h4>
+<pre><code>$ curl -s http://localhost:3000/health
+{"success":true,"message":"Service healthy","body":{"status":"ok","env":"production","database":"up"}}
+
+$ curl -s -H "X-Tenant: acme" http://localhost:3000/app/config
+{"success":true,"message":"OK","body":{"tenant":{"slug":"acme","name":"Acme Academy"},"businessMode":"academy","appName":"Acme Academy","branding":{"logoUrl":null,...,"primaryColor":"#0F766E","accentColor":"#E2725B"},"currency":"USD",...}}</code></pre>
+        <p>Replies like these mean the API, the database and your academy all work.</p>
+
+        <h3>Step 6: Lock it down after the first sign-in</h3>
+        <ul class="step-list">
+            <li>Sign in to the admin panel (<a href="#admin-panel-setup">section 14</a>) with the owner account, then change the password in <strong>Account</strong>.</li>
+            <li>Remove <code>SETUP_OWNER_PASSWORD</code> from <code>.env</code>. It is only read when the owner does not exist yet.</li>
+            <li>Add your staff in <strong>Team</strong> with the smallest role they need, instead of sharing the owner account.</li>
+            <li>Keep <code>.env</code> readable only by the user that runs the server: <code>chmod 600 .env</code>.</li>
+        </ul>
+
+        <h3>Step 7: The minute cron</h3>
+        <p>Exam results, exam reminders, push delivery, missed-payment checks and cleanup run when <code>/internal/cron/minute</code> is called. Call it every minute with your <code>CRON_SECRET</code>. On your own server, add one line with <code>crontab -e</code>:</p>
+<pre><code>* * * * * curl -fsS -H "Authorization: Bearer YOUR_CRON_SECRET" https://api.your-domain.com/internal/cron/minute &gt; /dev/null</code></pre>
+        <p>On Vercel, <code>vercel.json</code> already schedules it and Vercel sends the header itself once <code>CRON_SECRET</code> is set in the project. Per-minute schedules need a paid Vercel plan.</p>
+
+        <h3>Step 8: Keep it running with PM2</h3>
+<pre><code>sudo npm install -g pm2
+pm2 start prod.config.js      # starts "lumora-backend" from dist/main.js
+pm2 save
+pm2 startup                   # run the command it prints, so PM2 starts after a reboot</code></pre>
+        <p>Logs: <code>pm2 logs lumora-backend</code>. After a code update: <code>npm ci &amp;&amp; npm run build &amp;&amp; npm run db:migrate &amp;&amp; pm2 restart lumora-backend</code>.</p>
+
+        <h3>Step 9: nginx and HTTPS</h3>
+        <p>Point <code>api.your-domain.com</code> at your server, then add an nginx site:</p>
+<pre><code>server {
+    server_name api.your-domain.com;
+    client_max_body_size 2m;
+
+    location / {
+        proxy_pass http://127.0.0.1:3000;
+        proxy_set_header Host $host;
+        proxy_set_header X-Forwarded-For $proxy_add_x_forwarded_for;
+        proxy_set_header X-Forwarded-Proto $scheme;
+    }
+}</code></pre>
+<pre><code>sudo ln -s /etc/nginx/sites-available/lumora-api /etc/nginx/sites-enabled/
+sudo nginx -t &amp;&amp; sudo systemctl reload nginx
+sudo certbot --nginx -d api.your-domain.com</code></pre>
+        <p>Set <code>TRUST_PROXY=1</code> in <code>.env</code> (one proxy: nginx). With a CDN such as Cloudflare in front of nginx, use <code>2</code>. Large files never pass through nginx: the admin panel uploads them straight to your storage.</p>
+
+        <h3>Step 10: File storage (S3-compatible)</h3>
+        <p>Uploads from the admin panel go straight to your bucket. Lumora works with Cloudflare R2, Amazon S3, Backblaze B2, MinIO and other S3-compatible services.</p>
+        <ul class="step-list">
+            <li><strong>Private bucket</strong> (<code>MEDIA_BUCKET</code>) for lesson videos and documents. Learners get short-lived signed links (<code>MEDIA_SIGNED_URL_SECONDS</code>, default one hour).</li>
+            <li><strong>Public bucket</strong> (<code>PUBLIC_MEDIA_BUCKET</code> + <code>PUBLIC_MEDIA_BASE_URL</code>) for course pictures, banners, logos and instructor photos. <code>PUBLIC_MEDIA_BASE_URL</code> is the public address of that bucket or your CDN.</li>
+            <li>Keys: <code>S3_ENDPOINT</code>, <code>S3_REGION</code>, <code>S3_ACCESS_KEY_ID</code>, <code>S3_SECRET_ACCESS_KEY</code>. For R2: <code>S3_ENDPOINT=https://&lt;account-id&gt;.r2.cloudflarestorage.com</code>, <code>S3_REGION=auto</code>, <code>S3_FORCE_PATH_STYLE=true</code>.</li>
+            <li>Both buckets need a CORS rule that allows <code>PUT</code> from your admin panel's address, because the browser uploads directly:
+<pre><code>[{ "AllowedOrigins": ["https://admin.your-domain.com"],
+   "AllowedMethods": ["PUT", "GET"],
+   "AllowedHeaders": ["*"] }]</code></pre></li>
+        </ul>
+        <p>Without storage you can still paste links to images and videos hosted elsewhere.</p>
+
+        <h3>Step 11: Email (SMTP)</h3>
+        <p>Set <code>SMTP_HOST</code>, <code>SMTP_PORT</code> (465 or 587), <code>SMTP_USER</code>, <code>SMTP_PASS</code> and <code>SMTP_FROM</code> for password-reset and verification codes. Any provider works (your host's mail server, Amazon SES, Brevo, Mailgun, Gmail with an app password). You can also enter an SMTP account in the admin panel (<strong>Settings &gt; Email</strong>), which then takes priority.</p>
+
+        <h3>Step 12: Optional integrations</h3>
+        <table class="doc-table">
+            <thead><tr><th>Feature</th><th>What to set</th><th>Section</th></tr></thead>
+            <tbody>
+                <tr><td>Push notifications</td><td><code>FCM_SERVICE_ACCOUNT_JSON</code></td><td><a href="#firebase-setup">4</a></td></tr>
+                <tr><td>Google sign-in</td><td><code>GOOGLE_CLIENT_IDS</code></td><td><a href="#social-sign-in">5</a></td></tr>
+                <tr><td>Stripe, Flutterwave, Razorpay</td><td>Keys in Settings &gt; Payments (or env keys) and webhooks</td><td><a href="#web-payments">10</a></td></tr>
+                <tr><td>Google Play (RevenueCat)</td><td>Keys in Settings &gt; Payments &gt; App stores and the RevenueCat webhook</td><td><a href="#store-payments">11</a></td></tr>
+                <tr><td>Bunny Stream video</td><td>Settings &gt; Video in the admin panel, or <code>BUNNY_STREAM_*</code></td><td>admin panel</td></tr>
+            </tbody>
+        </table>
+
+        <h3>Demo data (optional)</h3>
+        <p>To try Lumora with sample courses, learners and orders on a <strong>separate test database</strong>, run <code>npm run db:seed</code> after the migrations. It creates the academy <code>demo</code> with the accounts <code>owner@demo.lumora.test</code> and <code>learner@demo.lumora.test</code> (password <code>lumora-demo-123</code>). Never run it on your live database, and never keep the demo accounts on a public server.</p>
+        <p><code>npm run demo:math</code> adds one complete sample course (maths, with quizzes in every question format and a live exam) to your academy, which is handy for testing checkout and the player.</p>
+
+        <h3>Alternative: deploy to Vercel</h3>
+        <ul class="step-list">
+            <li>Import the <code>Backend</code> folder as a Vercel project. <code>vercel.json</code> already routes every request to the API and schedules the cron.</li>
+            <li>Add the environment variables from step 3 in the project settings, plus <code>DATABASE_POOL_MAX=1</code>. Use a pooled connection string for <code>DATABASE_URL</code> (PgBouncer, Supabase or Neon pooled).</li>
+            <li>Run <code>npm run db:migrate</code> once from your computer with the same <code>DATABASE_URL</code> (and again after each update).</li>
+        </ul>
+
+        <h3>Security settings</h3>
+        <ul class="step-list">
+            <li>Rate limits: <code>AUTH_RATE_LIMIT_PER_MINUTE</code> (default 60 per client address on sign-in routes; schools often share one address, so do not set it too low).</li>
+            <li>Payment keys and SMTP passwords saved in the admin panel are encrypted (AES-256-GCM) with <code>SETTINGS_ENCRYPTION_KEY</code>. They are never shown again or logged.</li>
+            <li>Every admin change is recorded in the <strong>Activity log</strong>.</li>
+            <li>In production, test-only settings (<code>*_API_BASE</code>, <code>FCM_API_BASE</code>, <code>SMTP_ALLOW_PRIVATE_HOSTS</code>) are refused, and <code>PAYMENT_SIMULATOR_ENABLED</code> logs an error until you turn it off.</li>
+        </ul>
+
+        <h3 id="backend-troubleshooting">Troubleshooting</h3>
+        <table class="doc-table">
+            <thead><tr><th>Problem</th><th>Fix</th></tr></thead>
+            <tbody>
+                <tr><td>"DATABASE_URL is required" or "JWT_SECRET must be at least 32 characters"</td><td>Set them in <code>.env</code> in the <code>Backend</code> folder (the folder you start the server from)</td></tr>
+                <tr><td><code>ECONNREFUSED 127.0.0.1:5432</code></td><td>PostgreSQL is not running or listens elsewhere: <code>sudo systemctl status postgresql</code>, and check host and port in <code>DATABASE_URL</code></td></tr>
+                <tr><td><code>password authentication failed</code></td><td>The user or password in <code>DATABASE_URL</code> is wrong. Special characters in the password must be URL-encoded (<code>@</code> = <code>%40</code>)</td></tr>
+                <tr><td><code>EADDRINUSE: address already in use :::3000</code></td><td>Another process uses the port: change <code>PORT</code>, or stop it (<code>pm2 list</code>, <code>sudo lsof -i :3000</code>)</td></tr>
+                <tr><td>Requests fail with <code>TENANT_NOT_FOUND</code> ("Unknown tenant") or <code>TENANT_REQUIRED</code></td><td>The <code>X-Tenant</code> slug does not exist, or none was sent and <code>DEFAULT_TENANT_SLUG</code> is empty. Check <code>DEFAULT_TENANT_SLUG</code>, the app's <code>TENANT</code> and the admin panel's <code>LUMORA_TENANT</code></td></tr>
+                <tr><td>Uploads fail in the admin panel</td><td>Storage is not configured (step 10), or the bucket's CORS rule does not allow <code>PUT</code> from the admin panel's address</td></tr>
+                <tr><td>No password-reset email arrives</td><td>Check the SMTP values and the spam folder; the server log shows the SMTP error. Many hosts block port 25; use 465 or 587</td></tr>
+                <tr><td>Exam results or push notifications never appear</td><td>The minute cron is not running (step 7). Test it: <code>curl -H "Authorization: Bearer YOUR_CRON_SECRET" https://api.your-domain.com/internal/cron/minute</code></td></tr>
+                <tr><td>Payment keys cannot be saved (409)</td><td>Set <code>SETTINGS_ENCRYPTION_KEY</code> and restart</td></tr>
+                <tr><td>Webhooks answer 400</td><td>The webhook secret in the admin panel does not match the one in the provider's dashboard, or a proxy rewrites the request body. Do not put a body-changing proxy or firewall rule in front of <code>/webhooks/</code></td></tr>
+            </tbody>
+        </table>
+    </section>
+
+    <section id="admin-panel-setup">
+        <h2>14. Admin Panel Setup (Next.js)</h2>
+        <p>The admin panel is a Next.js 15 app. Its own server talks to the backend; the browser never calls the backend directly and never sees a token. It stores no data of its own.</p>
+
+        <h3>Step 1: Install and configure</h3>
+<pre><code>cd Admin-Panel
+corepack enable          # makes the pnpm version in package.json available
+pnpm install
+cp .env.example .env.local</code></pre>
+        <table class="doc-table">
+            <thead><tr><th>Variable</th><th>Example</th><th>What it is</th></tr></thead>
+            <tbody>
+                <tr><td><code>API_BASE_URL</code></td><td><code>http://localhost:3000</code> or <code>https://api.your-domain.com</code></td><td>Your backend. Read on the server only</td></tr>
+                <tr><td><code>LUMORA_TENANT</code></td><td><code>acme</code></td><td>Your academy slug. Leave empty to use the backend's <code>DEFAULT_TENANT_SLUG</code></td></tr>
+            </tbody>
+        </table>
+
+        <h3>Step 2: Run</h3>
+<pre><code>pnpm dev</code></pre>
+        <div class="terminal">   ▲ Next.js 15.5.26
+   - Local:        http://localhost:3001
+   - Environments: .env.local
+
+ ✓ Starting...
+ <span class="t-ok">✓ Ready in 8.9s</span>
+ ✓ Compiled /sign-in in 491ms (614 modules)
+ GET /sign-in 200 in 718ms</div>
+        <p>Open <code>http://localhost:3001</code>. You should see the sign-in page with your academy's name:</p>
+        <figure class="doc-shot">
+            <img src="assets/first-run-admin-login.jpg" alt="Lumora admin sign-in page showing the academy name" loading="lazy">
+            <figcaption>The sign-in page. Sign in with the backend's <code>SETUP_OWNER_EMAIL</code> and <code>SETUP_OWNER_PASSWORD</code>. Learner accounts are refused here. (The small "N" in the corner is Next.js's development indicator; it does not appear in production.)</figcaption>
+        </figure>
+        <p>On a new academy, the first sign-in opens <strong>Set up your academy</strong>: five short steps for Brand (logo, app icon, splash, colours), Business mode, Currency and languages, Payment methods and Legal pages. Save each step; you can change everything later in Settings.</p>
+        <figure class="doc-shot">
+            <img src="assets/first-run-setup.jpg" alt="Set up your academy, step 1 of 5: Brand" loading="lazy">
+            <figcaption>First-run setup, step 1 of 5: Brand.</figcaption>
+        </figure>
+        <p>If sign-in fails with "We could not reach the server", check that the backend is running and that <code>API_BASE_URL</code> is right.</p>
+
+        <h3>Step 3: Go live</h3>
+        <p><strong>On your own server with PM2:</strong></p>
+<pre><code>pnpm build
+pm2 start prod.config.js      # starts "lumora-admin" on port 3001
+pm2 save</code></pre>
+        <p>Then an nginx site for <code>admin.your-domain.com</code>, the same as the backend's in section 13 step 9 but with <code>proxy_pass http://127.0.0.1:3001;</code>, and <code>sudo certbot --nginx -d admin.your-domain.com</code>. Set <code>API_BASE_URL</code> to the backend's address before <code>pnpm build</code>, and rebuild after you change it.</p>
+        <p><strong>On Vercel:</strong> import the <code>Admin-Panel</code> folder, add <code>API_BASE_URL</code> and <code>LUMORA_TENANT</code> in the project's environment variables and deploy.</p>
+
+        <h3>Roles</h3>
+        <table class="doc-table">
+            <thead><tr><th>Role</th><th>Can</th></tr></thead>
+            <tbody>
+                <tr><td>Owner</td><td>Everything, including payment keys, team and business mode</td></tr>
+                <tr><td>Admin</td><td>Everything except owner-only settings</td></tr>
+                <tr><td>Content manager</td><td>Courses, bundles, categories, exams, app home, FAQ</td></tr>
+                <tr><td>Support</td><td>Learners, reviews, questions, notifications</td></tr>
+                <tr><td>Finance</td><td>Orders, refunds, coupons, revenue</td></tr>
+                <tr><td>Instructor, organization admin</td><td>Marketplace mode only: their own courses, bundles, reviews, questions and earnings (the Studio)</td></tr>
+            </tbody>
+        </table>
+
+        <h3>What you can manage</h3>
+        <ul class="step-list">
+            <li><strong>Overview:</strong> dashboard; home and campaign analytics.</li>
+            <li><strong>Catalogue:</strong> courses (details, pricing and payment methods, curriculum, quiz builder, publish), bundles, categories, live exams (builder, schedule, live monitor, results).</li>
+            <li><strong>People:</strong> learners (with CSV export), instructors, certificates (issue, revoke, verify), team. Marketplace mode adds seller applications and sellers.</li>
+            <li><strong>Sales:</strong> orders and refunds, coupons, sale campaigns, store products, revenue report. Marketplace mode adds payouts.</li>
+            <li><strong>Engagement:</strong> push notifications, reviews, questions and answers.</li>
+            <li><strong>Platform:</strong> app home (banners and rails), FAQ, personalization, settings, activity log.</li>
+        </ul>
+
+        <h3 id="admin-panel-tour">Admin panel tour</h3>
+        <p>What the main pages look like, from the demo academy with sample courses.</p>
+        <figure class="doc-shot"><img src="assets/admin-courses.jpg" alt="Courses list with status, price and enrolments" loading="lazy"><figcaption>Courses: every course with its status, price and learners</figcaption></figure>
+        <figure class="doc-shot"><img src="assets/admin-course-details-and-pricing.jpg" alt="Course details and pricing step" loading="lazy"><figcaption>Course details and pricing, including the payment methods the course accepts</figcaption></figure>
+        <figure class="doc-shot"><img src="assets/admin-course-curriculum.jpg" alt="Course curriculum with sections and lessons" loading="lazy"><figcaption>Curriculum: sections and lessons (video, article, document, quiz)</figcaption></figure>
+        <figure class="doc-shot"><img src="assets/admin-quiz-builder.jpg" alt="Quiz builder" loading="lazy"><figcaption>Quiz builder with pictures and maths equations</figcaption></figure>
+        <figure class="doc-shot"><img src="assets/admin-live-exams.jpg" alt="Live exams" loading="lazy"><figcaption>Live exams: schedule, monitor and publish results</figcaption></figure>
+        <figure class="doc-shot"><img src="assets/admin-app-home-banners-and-rails.jpg" alt="App home banners and rails" loading="lazy"><figcaption>App home: banners and course rails, in the order learners see them</figcaption></figure>
+        <figure class="doc-shot"><img src="assets/admin-learners.jpg" alt="Learners" loading="lazy"><figcaption>Learners, with CSV export</figcaption></figure>
+        <figure class="doc-shot"><img src="assets/admin-orders.jpg" alt="Orders" loading="lazy"><figcaption>Orders and refunds</figcaption></figure>
+        <figure class="doc-shot"><img src="assets/admin-coupons.jpg" alt="Coupons" loading="lazy"><figcaption>Coupons: percent or fixed, public or private, usage limits</figcaption></figure>
+        <figure class="doc-shot"><img src="assets/admin-push-notifications.jpg" alt="Push notifications composer" loading="lazy"><figcaption>Push notifications to all learners, one course's learners, or learners who have been away</figcaption></figure>
+        <figure class="doc-shot"><img src="assets/admin-general-settings.jpg" alt="General settings" loading="lazy"><figcaption>Settings: your academy, money and languages</figcaption></figure>
+        <figure class="doc-shot"><img src="assets/admin-feature-switches.jpg" alt="Feature switches" loading="lazy"><figcaption>Feature switches: turn app features on or off without a release</figcaption></figure>
+        <figure class="doc-shot"><img src="assets/admin-team-and-roles.jpg" alt="Team and roles" loading="lazy"><figcaption>Team and staff roles</figcaption></figure>
+
+        <h3>Troubleshooting</h3>
+        <table class="doc-table">
+            <thead><tr><th>Problem</th><th>Fix</th></tr></thead>
+            <tbody>
+                <tr><td>"This account has no console access"</td><td>You signed in with a learner account. Use the owner account or a team member</td></tr>
+                <tr><td>Sign-in fails or every page shows an error</td><td><code>API_BASE_URL</code> is wrong or the backend is down. Check <code>curl API_BASE_URL/health</code> from the admin panel's server</td></tr>
+                <tr><td>Changes to <code>.env.local</code> have no effect</td><td>Restart <code>pnpm dev</code>; in production run <code>pnpm build</code> again and restart</td></tr>
+                <tr><td>Images upload but do not show</td><td><code>PUBLIC_MEDIA_BASE_URL</code> on the backend does not point at the public bucket or CDN</td></tr>
+                <tr><td><code>pnpm: command not found</code></td><td>Run <code>corepack enable</code> (Node.js 20.19+), or <code>npm install -g pnpm@9</code></td></tr>
+                <tr><td>Build runs out of memory</td><td>Add swap on small servers, or build on your computer and copy the <code>.next</code> folder</td></tr>
+            </tbody>
+        </table>
+    </section>
+
+    <section id="api-reference">
+        <h2>15. API Reference</h2>
+        <p>The backend in <code>Backend/</code> serves one JSON API. The Flutter app and the admin panel both use it. This section covers the conventions and the most important calls. Every path below is relative to the base URL, with no extra prefix.</p>
+
+        <h3>Conventions</h3>
+        <ul class="step-list">
+            <li><strong>Base URL:</strong> <code>https://api.your-domain.com</code> (the value of <code>PUBLIC_API_URL</code>).</li>
+            <li><strong>Academy:</strong> send <code>X-Tenant: acme</code> on every request, where <code>acme</code> is your academy slug. Without the header the server uses <code>DEFAULT_TENANT_SLUG</code>; if that is empty too, the answer is 400 <code>TENANT_REQUIRED</code>. The demo data uses the slug <code>demo</code>.</li>
+            <li><strong>JSON:</strong> requests and responses are JSON (<code>Content-Type: application/json</code>). Files never pass through the API; they are uploaded straight to storage (see File uploads).</li>
+            <li><strong>Auth:</strong> signed-in calls send <code>Authorization: Bearer &lt;accessToken&gt;</code>. Catalogue reads work without a token.</li>
+            <li><strong>Language:</strong> <code>?lang=es</code>, else the <code>Accept-Language</code> header, limited to the languages the academy has switched on. Translatable text comes back in that language.</li>
+            <li><strong>App version:</strong> the app sends <code>X-App-Version</code>. Below the minimum set in the admin panel the answer is 426 <code>UPDATE_REQUIRED</code>.</li>
+            <li><strong>Money</strong> is always an integer in the currency's smallest unit, in fields ending in <code>Minor</code> (USD 2 decimals, JPY 0, KWD 3). <code>priceMinor: 1999</code> in USD is $19.99.</li>
+            <li><strong>Strict bodies:</strong> unknown fields are refused with 422, so send only the documented fields.</li>
+            <li><strong>Rate limits:</strong> <code>/auth/*</code> allows <code>AUTH_RATE_LIMIT_PER_MINUTE</code> requests per IP (default 60). Over the limit you get 429.</li>
+        </ul>
+
+        <h3>The response envelope</h3>
+        <p>Every successful response is wrapped like this. <code>body</code> holds the actual result.</p>
+<pre><code>{
+  "success": true,
+  "message": "OK",
+  "body": { ... }
+}</code></pre>
+        <p>In the examples below, a line starting with <code>→</code> shows only the <code>body</code> part. Errors use the same outer shape with <code>"success": false</code> (see Errors). Two kinds of route skip the envelope: the payment webhooks (<code>/webhooks/...</code>), which answer the provider with a small plain object, and the CSV exports, which stream a file.</p>
+
+        <h3>Pagination</h3>
+        <p>Lists take <code>?page=1&amp;limit=20</code>. <code>page</code> starts at 1 (maximum 1000); <code>limit</code> is 1 to 50, default 20. A paged list returns:</p>
+<pre><code>{ "success": true, "message": "OK",
+  "body": { "items": [ ... ], "page": 1, "limit": 20, "total": 57 } }</code></pre>
+        <p>A few short lists (<code>GET /instructors</code>, <code>GET /organizations</code>) return a plain array when you leave out <code>page</code>, and the paged shape above when you send it. <code>GET /me/learning</code> works the same way and always adds a <code>summary</code>. Large admin lists may add <code>"totalCapped": true</code> when there are more than 10,000 rows.</p>
+
+        <h3>Errors</h3>
+        <p>Every error has a human <code>message</code> and a machine-readable <code>body.code</code>. Validation errors also carry <code>body.fieldErrors</code>, one message per field.</p>
+<pre><code>// 422: POST /auth/register with a bad email and a short password
+{ "success": false,
+  "message": "Validation failed",
+  "body": {
+    "code": "VALIDATION_ERROR",
+    "fieldErrors": {
+      "email": "Must be an email",
+      "password": "Must be longer than or equal to 8 characters"
+    } } }
+
+// 409: the email already has an account
+{ "success": false, "message": "An account with this email already exists",
+  "body": { "code": "EMAIL_TAKEN" } }
+
+// 403: a lesson behind an unfinished required lesson
+{ "success": false, "message": "Finish “Welcome” to unlock this lesson",
+  "body": { "code": "LESSON_LOCKED", "blockingLessonId": "uuid", "blockingLessonTitle": "Welcome" } }</code></pre>
+        <p>Nested fields use a dot path (<code>"sections.0.title"</code>). Common codes: <code>UNAUTHORIZED</code>, <code>FORBIDDEN</code>, <code>NOT_FOUND</code>, <code>VALIDATION_ERROR</code>, <code>RATE_LIMITED</code>, <code>INVALID_CREDENTIALS</code>, <code>INVALID_REFRESH_TOKEN</code>, <code>ACCOUNT_SUSPENDED</code>, <code>CODE_INVALID</code>, <code>CODE_EXPIRED</code>, <code>NOT_ENROLLED</code>, <code>ACCESS_EXPIRED</code>, <code>COUPON_INVALID</code>, <code>COUPON_EXPIRED</code>, <code>GATEWAY_UNAVAILABLE</code>, <code>ORDER_NOT_PAYABLE</code>, <code>AMOUNT_MISMATCH</code>, <code>FEATURE_DISABLED</code>, <code>MAINTENANCE</code>, <code>UPDATE_REQUIRED</code>. The full list is in <code>Backend/src/common/errors/error-codes.ts</code>. Unexpected errors answer 500 <code>INTERNAL_ERROR</code>; the details go only to the server log.</p>
+
+        <table class="doc-table">
+            <thead><tr><th>Code</th><th>Meaning</th></tr></thead>
+            <tbody>
+                <tr><td>200 / 201</td><td>Success. 201 when a POST creates something (account, order, course)</td></tr>
+                <tr><td>400</td><td>Bad request: malformed ID, missing <code>X-Tenant</code>, wrong or expired emailed code</td></tr>
+                <tr><td>401</td><td>Missing, invalid or expired token; wrong email or password; suspended account</td></tr>
+                <tr><td>403</td><td>Not allowed: no console permission, not enrolled, feature switched off, lesson locked</td></tr>
+                <tr><td>404</td><td>Not found, or the academy slug is unknown</td></tr>
+                <tr><td>409</td><td>Conflict with the current state: email taken, order already paid, exam closed, item in use</td></tr>
+                <tr><td>422</td><td>Validation failed (<code>fieldErrors</code>), or a business rule such as an invalid coupon</td></tr>
+                <tr><td>426</td><td>The app version is below the minimum (<code>minSupported</code>, <code>updateUrl</code> in <code>body</code>)</td></tr>
+                <tr><td>429</td><td>Too many requests</td></tr>
+                <tr><td>500</td><td>Unexpected server error</td></tr>
+                <tr><td>501</td><td>A service is not set up: email delivery, S3 storage, Google/Apple sign-in, video streaming</td></tr>
+                <tr><td>502</td><td>A payment or video provider refused the call or could not be reached</td></tr>
+                <tr><td>503</td><td>Maintenance mode is on (<code>MAINTENANCE</code>), or the health check cannot reach the database</td></tr>
+            </tbody>
+        </table>
+
+        <h3>Authentication</h3>
+        <p>Accounts belong to one academy. A sign-in returns a <strong>session</strong>. The access token is a short-lived JWT (<code>ACCESS_TOKEN_TTL_SECONDS</code>, default 900). The refresh token is opaque and changes on every refresh, so always keep only the newest one.</p>
+<pre><code>POST /auth/register                         201
+X-Tenant: acme
+{ "email": "learner@example.com", "password": "a-strong-password", "fullName": "Jane Learner" }
+
+POST /auth/login                            200
+{ "email": "learner@example.com", "password": "a-strong-password" }
+
+// both answer with a session ("message" is "Account created" for register)
+{ "success": true, "message": "OK",
+  "body": {
+    "accessToken": "eyJhbGciOiJIUzI1NiIs...",
+    "refreshToken": "q8Yt3...",
+    "expiresIn": 900,
+    "user": { "id": "uuid", "tenantId": "uuid", "email": "learner@example.com",
+              "fullName": "Jane Learner", "roles": [], "access": {} } } }</code></pre>
+        <p><code>password</code> is 8 to 128 characters and <code>fullName</code> 1 to 120. A wrong email or password answers 401 <code>INVALID_CREDENTIALS</code> (the same answer for unknown emails). For staff, <code>roles</code> lists their roles (for example <code>["owner"]</code>) and <code>access</code> maps each admin module to <code>view</code> or <code>edit</code>.</p>
+<pre><code>POST /auth/google                           200
+{ "idToken": "&lt;ID token from the Google Sign-In SDK&gt;", "fullName": "Jane Learner" }
+// also POST /auth/apple with the same body; both answer with a session
+
+POST /auth/refresh                          200
+{ "refreshToken": "q8Yt3..." }              // answers with a new session
+
+POST /auth/logout                           200
+{ "refreshToken": "q8Yt3..." }
+→ { "success": true, "message": "Signed out", "body": { "signedOut": true } }</code></pre>
+        <p>Google and Apple ID tokens are checked against <code>GOOGLE_CLIENT_IDS</code> / <code>APPLE_CLIENT_IDS</code>. If the provider is not set up, the answer is 501 <code>PROVIDER_NOT_CONFIGURED</code>. Send one refresh at a time: reusing a refresh token that was already exchanged ends that sign-in (401 <code>INVALID_REFRESH_TOKEN</code>).</p>
+
+        <p><strong>Password reset with an emailed code</strong> takes three calls:</p>
+<pre><code>// 1. email a 6-digit code (same answer for unknown emails)
+POST /auth/password/forgot      { "email": "learner@example.com" }
+→ { "sent": true, "expiresInSec": 600, "resendInSec": 60 }
+
+// 2. exchange the code for a reset token
+POST /auth/password/verify-code { "email": "learner@example.com", "code": "482915" }
+→ { "resetToken": "9f2c...", "expiresInSec": 900 }
+
+// 3. set the new password (signs out every session)
+POST /auth/password/reset       { "token": "9f2c...", "password": "a-new-password" }
+→ { "reset": true }</code></pre>
+        <p>A wrong code answers 400 <code>CODE_INVALID</code> (5 tries per code); an expired code answers 400 <code>CODE_EXPIRED</code>. Without email delivery (SMTP in the admin panel or <code>SMTP_*</code> in <code>.env</code>) step 1 answers 501 <code>EMAIL_NOT_CONFIGURED</code>.</p>
+
+        <h3>Example: app config and the Home screen</h3>
+        <p><code>GET /app/config</code> (no token) returns everything the app needs at start: business mode, branding, languages, currency, feature switches, contact details, minimum app version, maintenance state and <code>paymentGateways</code> (the gateways checkout can use right now).</p>
+<pre><code>GET /home?lang=en                          (no token)
+
+{ "success": true, "message": "OK",
+  "body": {
+    "banners": [ { "id": "uuid", "title": "New courses", "subtitle": "Start today",
+                   "imageUrl": "https://cdn.your-domain.com/...jpg",
+                   "link": { "type": "course", "target": "uuid" } } ],
+    "sections": [ { "id": "uuid", "kind": "featured", "source": "manual", "autoKind": null,
+                    "title": "Featured", "subtitle": null, "audience": "all", "personal": false,
+                    "seeAll": { "type": "section", "target": "uuid" },
+                    "itemType": "course", "items": [ { ...course card... } ] } ],
+    "categories": [ { ...category tree... } ] } }</code></pre>
+        <p>A section with <code>"personal": true</code> (for example "For you") arrives with empty <code>items</code>; the app fills it from <code>GET /me/recommendations/sections/:id</code>. Banner link types: <code>none</code>, <code>course</code>, <code>category</code>, <code>url</code>.</p>
+
+        <h3>Example: courses</h3>
+<pre><code>GET /courses?q=design&amp;category=design&amp;level=beginner&amp;price=paid&amp;sort=popular&amp;page=1&amp;limit=20
+
+{ "success": true, "message": "OK",
+  "body": { "page": 1, "limit": 20, "total": 1, "items": [
+    { "id": "uuid", "slug": "ui-design-basics", "title": "UI Design Basics",
+      "subtitle": "From wireframe to prototype", "thumbnailUrl": "https://...",
+      "level": "beginner", "category": { "id": "uuid", "slug": "design", "name": "Design" },
+      "currency": "USD", "priceMinor": 1999, "originalPriceMinor": 2999, "discountPercent": 33,
+      "sale": null, "isFree": false, "rating": 4.7, "ratingCount": 120, "enrollmentCount": 1840,
+      "lessonCount": 42, "durationSec": 21600, "isBestseller": true, "isNew": false,
+      "instructors": [ { "id": "uuid", "name": "Alex Doe", "avatarUrl": null } ],
+      "organization": null, "accessDays": null, ... } ] } }</code></pre>
+        <p>Other filters: <code>minRating</code>, <code>topic</code>, <code>instructor</code>, <code>organization</code>. Sort values: <code>popular</code>, <code>rating</code>, <code>newest</code>, <code>price_asc</code>, <code>price_desc</code>.</p>
+<pre><code>GET /courses/ui-design-basics              (ID or slug, no token)
+
+// a course card plus:
+{ "description": "...", "language": "en", "outcomes": ["..."], "requirements": ["..."],
+  "certificateEnabled": true, "instructorDetails": [ ... ], "topics": [ ... ],
+  "ratingDistribution": { "1": 2, "2": 1, "3": 6, "4": 31, "5": 80 },
+  "includes": { "videoSec": 20400, "lessonCount": 42, "documentCount": 3, "quizCount": 4, "certificate": true },
+  "curriculum": [ { "id": "uuid", "title": "Getting started", "lessonCount": 5, "durationSec": 1800,
+      "lessons": [ { "id": "uuid", "title": "Welcome", "type": "video", "durationSec": 240,
+                     "isPreview": true, "documentDisplay": "document",
+                     "previewVideoUrl": "https://..." } ] } ] }</code></pre>
+        <p><code>previewVideoUrl</code> is set only on free-preview lessons. Paid lesson content comes from the player endpoints after enrollment (<code>GET /me/courses/:courseId/lessons/:lessonId</code>).</p>
+
+        <h3>Example: checkout with a payment gateway</h3>
+        <p>Stripe, Flutterwave and Razorpay use a hosted payment page that the app opens in a web view. Card data never reaches your server.</p>
+<pre><code>POST /checkout/orders                      (token)            201
+{ "courseIds": ["uuid"], "couponCode": "SAVE10", "gateway": "stripe",
+  "idempotencyKey": "6f1d9c2e-checkout-attempt" }
+
+{ "success": true, "message": "Order created",
+  "body": {
+    "order": { "id": "uuid", "orderNo": "LM260115-000123", "status": "pending", "currency": "USD",
+               "subtotalMinor": 1999, "discountMinor": 200, "taxMinor": 0, "totalMinor": 1799,
+               "couponCode": "SAVE10", "gateway": "stripe", "createdAt": "...", "paidAt": null,
+               "items": [ { "courseId": "uuid", "title": "UI Design Basics", "unitPriceMinor": 1999,
+                            "discountMinor": 200, "finalPriceMinor": 1799, ... } ] },
+    "replayed": false,
+    "payment": { "action": "redirect", "endpoint": "/checkout/orders/uuid/pay" } } }
+
+POST /checkout/orders/{id}/pay             (token)            200
+→ { "url": "https://checkout.stripe.com/...", "returnUrl": "https://..." }
+
+POST /checkout/orders/{id}/verify          (token)            200
+→ the order, with "status": "paid" once the provider confirms</code></pre>
+        <ul class="step-list">
+            <li><code>idempotencyKey</code> (8 to 100 characters) is made by the app once per checkout attempt. Sending the same key again returns the same order.</li>
+            <li><code>gateway</code> must be one of the values in <code>GET /app/config</code> → <code>paymentGateways</code>, else 422 <code>GATEWAY_UNAVAILABLE</code>.</li>
+            <li>A total of 0 (a 100% coupon) is paid at once: <code>"gateway": "free"</code> and <code>"payment": { "action": "none" }</code>.</li>
+            <li>Close the web view when it reaches <code>returnUrl</code>, then call <code>verify</code>. The provider's webhook settles the order too, so <code>verify</code> is a shortcut, not a requirement.</li>
+            <li><code>POST /checkout/quote</code> takes the same <code>courseIds</code> / <code>bundleIds</code> / <code>couponCode</code> and returns prices without creating anything.</li>
+        </ul>
+
+        <h3>Example: Google Play and App Store purchases (RevenueCat)</h3>
+        <p>Inside the mobile app a course can be paid with a store product. The store charges its own local price; the server never trusts the app and reads every purchase back from RevenueCat.</p>
+<pre><code>// 1. which methods this course accepts on this device
+GET /checkout/courses/{courseId}/gateways?platform=android     (token)
+→ { "courseId": "uuid", "isFree": false, "gateways": [
+     { "provider": "stripe", "kind": "hosted", "displayName": "Stripe", "logoUrl": null,
+       "platforms": ["android", "ios", "web"], "store": null },
+     { "provider": "google_play", "kind": "store", "displayName": "Google Play", "logoUrl": null,
+       "platforms": ["android"],
+       "store": { "productId": "course_tier_999", "referencePriceMinor": 999,
+                  "currency": "USD", "sdkKey": "goog_xxxxxxxx" } } ] }
+
+// 2. create the store order                                    201
+POST /checkout/store/orders
+{ "courseId": "uuid", "store": "google_play", "idempotencyKey": "b7e0a4c1-store-attempt" }
+→ { "order": { ...status "pending", gateway "google_play"... }, "replayed": false,
+    "purchase": { "store": "google_play", "productId": "course_tier_999",
+                  "appUserId": "uuid", "sdkKey": "goog_xxxxxxxx" } }
+
+// 3. the app logs in to RevenueCat with appUserId and buys productId
+
+// 4. settle the order                                          200
+POST /checkout/orders/{id}/store-verify
+{ "transactionId": "GPA.0000-0000-0000-00000" }      // optional
+→ the order; still "pending" means ask again in a few seconds</code></pre>
+        <p><code>store</code> is <code>google_play</code> or <code>app_store</code>. Coupons and sale prices do not apply to store orders. The RevenueCat webhook settles the order if the app closes before step 4. Other order calls: <code>GET /me/orders</code>, <code>GET /me/orders/:id</code>, <code>POST /me/orders/:id/cancel</code>.</p>
+
+        <h3>Example: create a course (admin)</h3>
+<pre><code>POST /console/courses                      (staff token, Courses: edit)     201
+X-Tenant: acme
+{ "title": "UI Design Basics", "progression": "sequential", "preventSkipping": false }
+
+→ { "id": "uuid", "title": "UI Design Basics", "slug": "ui-design-basics", "status": "draft",
+    "currency": "USD", "priceMinor": 0, "isFree": false, "progression": "sequential",
+    "sections": [], ... }</code></pre>
+        <p>Only <code>title</code> (3 to 160 characters) is required. A new course starts as a <code>draft</code>. Set the details and price with <code>PATCH /console/courses/:id</code> (for example <code>{ "priceMinor": 1999, "categoryId": "uuid", "level": "beginner" }</code>), add the curriculum with <code>POST /console/courses/:id/sections</code> and <code>POST /console/sections/:id/lessons</code>, then publish with <code>POST /console/courses/:id/status</code> <code>{ "to": "published" }</code>. Publishing a course with unfinished lessons answers 409 <code>NOT_READY</code>.</p>
+
+        <h3>File uploads</h3>
+        <p>Files go straight from the admin panel or app to your S3-compatible bucket with a <strong>presigned URL</strong>. The API never receives the file itself.</p>
+        <ol class="step-list">
+            <li>Ask for an upload URL: <code>POST /console/uploads</code> with <code>{ "kind": "video", "contentType": "video/mp4", "sizeBytes": 73400320 }</code> (<code>kind</code> is <code>video</code> or <code>document</code>). For images use <code>POST /console/uploads/image</code> with a <code>purpose</code> (<code>course</code>, <code>banner</code>, <code>branding</code>, <code>instructor</code>, <code>onboarding</code>, <code>organization</code>).</li>
+            <li>The answer is <code>{ "mediaFileId": "uuid", "uploadUrl": "https://...", "method": "PUT", "headers": { ... }, "expiresAt": "..." }</code>. PUT the file to <code>uploadUrl</code> with exactly those headers.</li>
+            <li>Confirm: <code>POST /console/uploads/:mediaFileId/complete</code> → <code>{ "mediaFileId": "uuid", "status": "ready" }</code> (images also return the public <code>url</code>). The server checks the size and type first: 409 <code>UPLOAD_INCOMPLETE</code> if the file is not there yet, 422 <code>UPLOAD_MISMATCH</code> if it differs.</li>
+            <li>Attach the <code>mediaFileId</code> to a lesson. Only completed uploads can be attached.</li>
+        </ol>
+        <p>Large files use the multipart routes under <code>/console/uploads/multipart</code>. The app uploads profile photos the same way with <code>POST /me/avatar/upload</code> and then <code>PATCH /me { "avatarKey": "..." }</code>. Without S3 settings these calls answer 501 <code>STORAGE_NOT_CONFIGURED</code>. Your bucket's CORS must allow <code>PUT</code> from the admin panel origin and expose the <code>ETag</code> header.</p>
+
+        <h3>Webhooks</h3>
+        <p>Payment providers call one route per provider and academy. No token and no <code>X-Tenant</code> header are needed: the provider's signature is the authentication, and the academy slug is in the path.</p>
+<pre><code>POST /webhooks/stripe/acme
+POST /webhooks/flutterwave/acme
+POST /webhooks/razorpay/acme
+POST /webhooks/revenuecat/acme      // Google Play and App Store purchases
+
+// answers (no envelope)
+200 { "received": true }            // also for a repeated event: { "received": true, "duplicate": true }
+400 { "error": "..." }              // bad or missing signature, nothing stored
+404 { "error": "..." }              // unknown provider or academy</code></pre>
+        <p>The admin panel shows the exact <code>webhookUrl</code> for each gateway under Settings → Payments. Stripe signs with <code>Stripe-Signature</code>, Flutterwave sends <code>verif-hash</code>, Razorpay sends <code>X-Razorpay-Signature</code>, and RevenueCat sends your <code>webhookAuth</code> value in the <code>Authorization</code> header. Each event is stored once and the payment is fetched again from the provider before an order is settled. <code>POST /webhooks/bunny/acme</code> receives Bunny Stream encoding events when adaptive video is used.</p>
+
+        <h3>Scheduled jobs (cron)</h3>
+<pre><code>GET /internal/cron/minute
+Authorization: Bearer &lt;CRON_SECRET&gt;</code></pre>
+        <p>Call this once a minute (Vercel Cron, or a system cron with <code>curl</code>). It closes finished exams, queues and sends push notifications, fans out campaigns and announcements, checks payments with missed webhooks, cancels unpaid orders after <code>PENDING_ORDER_TTL_MINUTES</code>, cleans up abandoned uploads and runs periodic cleanup. Without <code>CRON_SECRET</code> set, every call is refused. Like other routes it needs an academy: send <code>X-Tenant</code>, or set <code>DEFAULT_TENANT_SLUG</code>. The single steps are also available under <code>/internal/...</code> with the same header.</p>
+
+        <div class="alert-warning">
+            <strong>Keep <code>CRON_SECRET</code>, <code>JWT_SECRET</code> and <code>SETTINGS_ENCRYPTION_KEY</code> private.</strong> Never ship them inside the Flutter app or the admin panel build.
+        </div>
+
+        <h3>Endpoint groups</h3>
+        <p>Access: <strong>public</strong> (no token), <strong>token</strong> (any signed-in user), <strong>enrolled</strong> (active enrollment in the course), <strong>staff</strong> (a console role with the module's permission: <code>view</code> for GET, <code>edit</code> for other methods), <strong>owner/admin</strong>, <strong>seller</strong> (instructor or organization admin, Marketplace mode), <strong>cron</strong> (<code>Bearer CRON_SECRET</code>), <strong>signature</strong> (provider-signed webhook).</p>
+        <p>The table lists the main routes of each group. Every route is defined in a <code>*.controller.ts</code> file under <code>Backend/src/modules/</code> (auth is in <code>Backend/src/auth/</code>).</p>
+        <table class="doc-table">
+            <thead><tr><th>Group</th><th>Method and path</th><th>Access</th></tr></thead>
+            <tbody>
+                <tr><td>Health</td><td><code>GET /health</code></td><td>public, no tenant; 503 when the database is down</td></tr>
+                <tr><td>Auth</td><td><code>POST /auth/register</code><br><code>POST /auth/login</code><br><code>POST /auth/google</code><br><code>POST /auth/apple</code><br><code>POST /auth/refresh</code><br><code>POST /auth/logout</code><br><code>POST /auth/password/forgot</code><br><code>POST /auth/password/verify-code</code><br><code>POST /auth/password/reset</code></td><td>public</td></tr>
+                <tr><td>App config</td><td><code>GET /app/config</code><br><code>GET /app/onboarding</code><br><code>GET /app/faq</code><br><code>GET /app/legal/:kind</code></td><td>public</td></tr>
+                <tr><td>Catalogue</td><td><code>GET /home</code><br><code>GET /home/sections/:id/courses</code><br><code>GET /categories</code><br><code>GET /courses</code><br><code>GET /courses/:idOrSlug</code><br><code>GET /courses/:idOrSlug/reviews</code><br><code>GET /courses/:idOrSlug/similar</code><br><code>GET /instructors</code><br><code>GET /instructors/:id</code><br><code>GET /organizations</code><br><code>GET /organizations/:slug</code><br><code>GET /bundles</code><br><code>GET /bundles/:idOrSlug</code><br><code>GET /search/trending</code><br><code>POST /search/queries</code><br><code>GET /recommendations/guest</code></td><td>public</td></tr>
+                <tr><td>Profile</td><td><code>GET /me</code><br><code>PATCH /me</code><br><code>DELETE /me</code><br><code>POST /me/password</code><br><code>POST /me/email/code</code><br><code>POST /me/email/verify</code><br><code>POST /me/avatar/upload</code><br><code>GET /me/instructor-application</code><br><code>POST /me/instructor-application</code></td><td>token</td></tr>
+                <tr><td>Personalization</td><td><code>GET /me/preferences</code><br><code>PUT /me/preferences</code><br><code>GET /me/recommendations</code><br><code>GET /me/recommendations/sections/:id</code><br><code>POST /me/recommendations/dismiss</code><br><code>DELETE /me/recommendations/dismiss/:courseId</code><br><code>POST /me/recommendations/reset</code></td><td>token</td></tr>
+                <tr><td>My learning</td><td><code>GET /me/learning</code><br><code>GET /me/courses/:courseId/access</code><br><code>POST /me/enrollments</code></td><td>token</td></tr>
+                <tr><td>Player</td><td><code>GET /me/courses/:courseId/player</code><br><code>GET /me/courses/:courseId/lessons/:lessonId</code><br><code>PUT /me/courses/:courseId/lessons/:lessonId/progress</code><br><code>GET /me/courses/:courseId/resources</code><br><code>GET /me/courses/:courseId/announcements</code><br><code>GET /me/courses/:courseId/notes</code><br><code>POST /me/courses/:courseId/notes</code><br><code>PATCH /me/notes/:noteId</code><br><code>DELETE /me/notes/:noteId</code><br><code>POST /me/courses/:courseId/review</code></td><td>enrolled</td></tr>
+                <tr><td>Q&amp;A</td><td><code>GET /me/courses/:courseId/questions</code><br><code>POST /me/courses/:courseId/questions</code><br><code>GET /me/questions/:threadId</code><br><code>POST /me/questions/:threadId/replies</code><br><code>PUT /me/questions/:threadId/vote</code><br><code>DELETE /me/questions/:threadId/vote</code></td><td>enrolled</td></tr>
+                <tr><td>Quizzes</td><td><code>GET /me/courses/:courseId/quizzes/:quizId</code><br><code>GET /me/courses/:courseId/quizzes/:quizId/attempts</code><br><code>POST /me/courses/:courseId/quizzes/:quizId/attempts</code></td><td>enrolled</td></tr>
+                <tr><td>Live exams</td><td><code>GET /me/exams</code><br><code>GET /me/exams/:examId</code><br><code>PUT /me/exams/:examId/reminder</code><br><code>DELETE /me/exams/:examId/reminder</code><br><code>POST /me/exams/:examId/attempt</code><br><code>GET /me/exams/:examId/attempt</code><br><code>PUT /me/exams/:examId/attempt/answers/:questionId</code><br><code>POST /me/exams/:examId/attempt/submit</code><br><code>POST /me/exams/:examId/attempt/events</code><br><code>GET /me/exams/:examId/leaderboard</code><br><code>GET /me/exams/:examId/review</code></td><td>token / enrolled</td></tr>
+                <tr><td>Live classes</td><td><code>GET /me/live-sessions</code><br><code>GET /me/courses/:courseId/live-sessions</code><br><code>POST /me/live-sessions/:id/join</code></td><td>token / enrolled</td></tr>
+                <tr><td>Wishlist and cart</td><td><code>GET /me/wishlist</code><br><code>PUT /me/wishlist/:courseId</code><br><code>DELETE /me/wishlist/:courseId</code><br><code>GET /me/cart</code><br><code>PUT /me/cart/:courseId</code><br><code>DELETE /me/cart/:courseId</code><br><code>PUT /me/cart/bundles/:bundleId</code><br><code>DELETE /me/cart/bundles/:bundleId</code><br><code>DELETE /me/cart</code></td><td>token</td></tr>
+                <tr><td>Checkout</td><td><code>GET /checkout/coupons</code><br><code>POST /checkout/quote</code><br><code>POST /checkout/orders</code><br><code>POST /checkout/orders/:id/pay</code><br><code>POST /checkout/orders/:id/verify</code><br><code>GET /checkout/gateways</code><br><code>GET /checkout/courses/:courseId/gateways</code><br><code>POST /checkout/store/orders</code><br><code>POST /checkout/orders/:id/store-verify</code></td><td>token</td></tr>
+                <tr><td>Orders</td><td><code>GET /me/orders</code><br><code>GET /me/orders/:id</code><br><code>POST /me/orders/:id/cancel</code></td><td>token</td></tr>
+                <tr><td>Notifications and devices</td><td><code>GET /me/notifications</code><br><code>GET /me/notifications/unread-count</code><br><code>POST /me/notifications/:id/read</code><br><code>POST /me/notifications/read-all</code><br><code>POST /me/devices</code><br><code>POST /me/devices/unregister</code></td><td>token</td></tr>
+                <tr><td>Certificates</td><td><code>GET /me/certificates</code><br><code>GET /me/certificates/:id</code><br><code>PATCH /me/certificates/:id/name</code><br><code>GET /certificates/verify/:code</code><br><code>GET /certificates/:id/pdf</code></td><td>token for <code>/me</code>; the rest public, no tenant</td></tr>
+                <tr><td>Console: dashboard</td><td><code>GET /console/dashboard</code><br><code>GET /console/analytics/home</code><br><code>GET /console/analytics/campaigns</code></td><td>staff</td></tr>
+                <tr><td>Console: courses</td><td><code>GET /console/courses</code><br><code>POST /console/courses</code><br><code>GET /console/courses/:id</code><br><code>PATCH /console/courses/:id</code><br><code>POST /console/courses/:id/status</code><br><code>POST /console/courses/:id/sections</code><br><code>PUT /console/courses/:id/order</code><br><code>PATCH /console/sections/:id</code><br><code>DELETE /console/sections/:id</code><br><code>POST /console/sections/:id/lessons</code><br><code>PATCH /console/lessons/:id</code><br><code>DELETE /console/lessons/:id</code><br><code>GET /console/quizzes/:id</code><br><code>PUT /console/quizzes/:id</code><br><code>GET /console/courses/:id/resources</code><br><code>POST /console/courses/:id/resources</code></td><td>staff (Courses) or seller for own courses</td></tr>
+                <tr><td>Console: uploads</td><td><code>POST /console/uploads</code><br><code>POST /console/uploads/image</code><br><code>POST /console/uploads/:id/complete</code><br><code>POST /console/uploads/multipart</code><br><code>POST /console/uploads/multipart/:id/parts</code><br><code>POST /console/uploads/multipart/:id/complete</code><br><code>DELETE /console/uploads/multipart/:id</code></td><td>staff or seller</td></tr>
+                <tr><td>Console: categories and bundles</td><td><code>GET /console/categories</code><br><code>POST /console/categories</code><br><code>PATCH /console/categories/:id</code><br><code>DELETE /console/categories/:id</code><br><code>GET /console/bundles</code><br><code>POST /console/bundles</code><br><code>PATCH /console/bundles/:id</code><br><code>PUT /console/bundles/:id/courses</code><br><code>DELETE /console/bundles/:id</code></td><td>staff</td></tr>
+                <tr><td>Console: exams</td><td><code>GET /console/exams</code><br><code>POST /console/exams</code><br><code>GET /console/exams/:id</code><br><code>PATCH /console/exams/:id</code><br><code>PUT /console/exams/:id/paper</code><br><code>POST /console/exams/:id/status</code><br><code>GET /console/exams/:id/monitor</code></td><td>staff</td></tr>
+                <tr><td>Console: live classes</td><td><code>GET /console/courses/:courseId/live-sessions</code><br><code>POST /console/courses/:courseId/live-sessions</code><br><code>PATCH /console/live-sessions/:id</code><br><code>POST /console/live-sessions/:id/cancel</code><br><code>GET /console/live-sessions/:id/attendance</code></td><td>staff</td></tr>
+                <tr><td>Console: learners</td><td><code>GET /console/learners</code><br><code>GET /console/learners/:id</code><br><code>POST /console/learners/:id/enrollments</code><br><code>POST /console/enrollments/:id/revoke</code><br><code>POST /console/learners/:id/status</code><br><code>POST /console/learners/:id/password-reset</code><br><code>DELETE /console/learners/:id</code></td><td>staff</td></tr>
+                <tr><td>Console: sales</td><td><code>GET /console/orders</code><br><code>GET /console/orders/:id</code><br><code>POST /console/orders/:id/refunds</code><br><code>GET /console/coupons</code><br><code>POST /console/coupons</code><br><code>PATCH /console/coupons/:id</code><br><code>DELETE /console/coupons/:id</code><br><code>GET /console/reports/revenue</code><br><code>GET /console/sale-campaigns</code><br><code>POST /console/sale-campaigns</code></td><td>staff</td></tr>
+                <tr><td>Console: store products</td><td><code>GET /console/store-products</code><br><code>POST /console/store-products</code><br><code>PATCH /console/store-products/:id</code><br><code>GET /console/courses/:id/payment-methods</code><br><code>PUT /console/courses/:id/payment-methods</code></td><td>staff</td></tr>
+                <tr><td>Console: certificates</td><td><code>GET /console/certificates</code><br><code>POST /console/certificates/issue</code><br><code>POST /console/certificates/:id/revoke</code><br><code>POST /console/certificates/:id/restore</code></td><td>staff</td></tr>
+                <tr><td>Console: engagement</td><td><code>GET /console/campaigns</code><br><code>POST /console/campaigns</code><br><code>GET /console/reviews</code><br><code>POST /console/reviews/:id/moderate</code><br><code>GET /console/questions</code><br><code>POST /console/questions/:id/replies</code></td><td>staff</td></tr>
+                <tr><td>Console: home content and FAQ</td><td><code>GET /console/home-content</code><br><code>POST /console/home-content/banners</code><br><code>POST /console/home-content/sections</code><br><code>PUT /console/home-content/order</code><br><code>GET /console/faq</code><br><code>POST /console/faq</code></td><td>staff</td></tr>
+                <tr><td>Console: settings</td><td><code>GET /console/settings</code><br><code>PATCH /console/settings</code><br><code>PUT /console/settings/app</code><br><code>PUT /console/settings/features</code><br><code>PUT /console/settings/email</code><br><code>PUT /console/settings/gateways/:provider</code><br><code>POST /console/settings/gateways/:provider/test</code><br><code>POST /console/settings/business-mode</code></td><td>staff (Settings); owner only for gateways and business mode</td></tr>
+                <tr><td>Console: team</td><td><code>GET /console/team</code><br><code>POST /console/team</code><br><code>PUT /console/team/:id/roles</code><br><code>POST /console/team/:id/suspend</code><br><code>GET /console/custom-roles</code><br><code>POST /console/custom-roles</code><br><code>GET /console/activity</code></td><td>owner/admin; suspend: owner; activity: staff</td></tr>
+                <tr><td>Console: sellers and payouts</td><td><code>GET /console/sellers</code><br><code>PATCH /console/sellers/:id</code><br><code>GET /console/instructor-applications</code><br><code>POST /console/instructor-applications/:id/approve</code><br><code>GET /console/payouts/balances</code><br><code>POST /console/payouts</code></td><td>staff (Sellers, Payouts)</td></tr>
+                <tr><td>Console: Seller Studio</td><td><code>GET /console/studio</code><br><code>GET /console/studio/courses</code><br><code>POST /console/studio/courses</code><br><code>POST /console/studio/payouts</code><br><code>POST /console/studio/announcements</code></td><td>seller</td></tr>
+                <tr><td>Console: CSV exports</td><td><code>GET /console/exports/orders.csv</code><br><code>GET /console/exports/revenue.csv</code><br><code>GET /console/exports/learners.csv</code></td><td>staff (Reports); learners: owner/admin</td></tr>
+                <tr><td>Webhooks</td><td><code>POST /webhooks/:provider/:tenantSlug</code></td><td>signature</td></tr>
+                <tr><td>Cron</td><td><code>GET /internal/cron/minute</code></td><td>cron</td></tr>
+            </tbody>
+        </table>
+    </section>
+
+    <section id="database-schema">
+        <h2>16. Database Schema</h2>
+        <p>PostgreSQL 15 or newer. The backend uses plain parameterised SQL through <code>pg</code>, with no ORM. Business steps that touch money, progress or exams are SQL functions inside the database, so each one runs in a single transaction.</p>
+
+        <h3>Where the schema lives</h3>
+        <ul class="step-list">
+            <li>The full schema is in <code>Backend/db/migrations/*.sql</code>, numbered in the order they run. One file, <code>0052_legal_pages_html.js</code>, is a JavaScript data step that runs the same way.</li>
+            <li><code>npm run db:migrate</code> applies only the files that have not run yet, each in its own transaction, and records each file name in the <code>schema_migrations</code> table. Running it again is safe: it prints <em>database is up to date</em>.</li>
+            <li>When <code>SETUP_OWNER_EMAIL</code> and <code>SETUP_OWNER_PASSWORD</code> are set, <code>db:migrate</code> also creates your academy and its first owner account, once.</li>
+            <li><code>npm run db:seed</code> loads <code>Backend/db/seed.sql</code>: the demo academy (slug <code>demo</code>) with 14 courses, instructors, exams, coupons and the accounts <code>owner@demo.lumora.test</code> and <code>learner@demo.lumora.test</code> (password <code>lumora-demo-123</code>). It refuses to run with <code>NODE_ENV=production</code>.</li>
+            <li>The migrations need the <code>pgcrypto</code> and <code>pg_trgm</code> extensions. Both are created automatically when the database user may do so. If not, run <code>CREATE EXTENSION IF NOT EXISTS pg_trgm;</code> once as a superuser before migrating.</li>
+        </ul>
+
+        <h3>Conventions</h3>
+        <ul class="step-list">
+            <li>Primary keys are <code>uuid</code> with <code>gen_random_uuid()</code>.</li>
+            <li>One database can host several academies. Every academy table has <code>tenant_id</code> referencing <code>tenants</code>, and every query filters by it.</li>
+            <li>Money columns end in <code>_minor</code> and are <code>bigint</code> in the currency's smallest unit (<code>price_minor</code>, <code>total_minor</code>, <code>amount_minor</code>). Currency is a 3-letter code (<code>char(3)</code>).</li>
+            <li>Dates are <code>timestamptz</code> (<code>created_at</code>, <code>updated_at</code>). A shared trigger, <code>set_updated_at()</code>, keeps <code>updated_at</code> current.</li>
+            <li>Soft delete: <code>users</code>, <code>courses</code>, <code>lessons</code> and <code>coupons</code> have a <code>deleted_at</code> column. Deleting a learner scrubs their personal data but keeps orders and payments as anonymous records.</li>
+            <li>Translatable text (category names, home section titles, FAQ, legal pages) is stored as <code>jsonb</code>, for example <code>{"en": "Design", "es": "Diseño"}</code>.</li>
+            <li>Allowed values are <code>CHECK</code> constraints on <code>text</code> columns, not PostgreSQL enum types.</li>
+            <li>Triggers keep the course counters current (<code>lesson_count</code>, <code>total_duration_sec</code>, <code>enrollment_count</code>, <code>rating_avg</code>, <code>rating_count</code>), refuse refunds above the amount paid, and make <code>activity_log</code> append-only.</li>
+        </ul>
+
+        <h3>Tables by area</h3>
+        <p>The migrations create <strong>92 tables</strong>, plus <code>schema_migrations</code> created by the migration runner.</p>
+        <table class="doc-table">
+            <thead><tr><th>Area</th><th>Tables</th></tr></thead>
+            <tbody>
+                <tr><td>Platform and accounts (18)</td><td><code>tenants</code>, <code>platform_settings</code>, <code>legal_pages</code>, <code>faq_items</code>, <code>onboarding_slides</code>, <code>users</code>, <code>user_roles</code>, <code>custom_roles</code>, <code>auth_identities</code>, <code>auth_codes</code>, <code>refresh_tokens</code>, <code>password_resets</code>, <code>device_tokens</code>, <code>media_files</code>, <code>video_events</code>, <code>activity_log</code>, <code>rate_limits</code>, <code>job_runs</code></td></tr>
+                <tr><td>Sellers and instructors (6)</td><td><code>instructor_profiles</code>, <code>instructor_applications</code>, <code>sellers</code>, <code>organizations</code>, <code>organization_members</code>, <code>payouts</code></td></tr>
+                <tr><td>Catalogue (15)</td><td><code>categories</code>, <code>courses</code>, <code>course_instructors</code>, <code>course_sections</code>, <code>lessons</code>, <code>lesson_resources</code>, <code>course_resources</code>, <code>topics</code>, <code>course_topics</code>, <code>home_banners</code>, <code>home_sections</code>, <code>home_section_items</code>, <code>bundles</code>, <code>bundle_courses</code>, <code>search_queries</code></td></tr>
+                <tr><td>Assessment (14)</td><td><code>question_banks</code>, <code>questions</code>, <code>question_options</code>, <code>quizzes</code>, <code>quiz_questions</code>, <code>quiz_attempts</code>, <code>quiz_attempt_answers</code>, <code>exams</code>, <code>exam_questions</code>, <code>exam_attempts</code>, <code>exam_attempt_answers</code>, <code>exam_attempt_events</code>, <code>exam_reminders</code>, <code>exam_notifications_sent</code></td></tr>
+                <tr><td>Commerce (16)</td><td><code>wishlist_items</code>, <code>cart_items</code>, <code>cart_bundles</code>, <code>coupons</code>, <code>coupon_courses</code>, <code>coupon_redemptions</code>, <code>orders</code>, <code>order_items</code>, <code>payments</code>, <code>payment_events</code>, <code>refunds</code>, <code>enrollments</code>, <code>payment_gateways</code>, <code>course_payment_exclusions</code>, <code>sale_campaigns</code>, <code>course_price_history</code></td></tr>
+                <tr><td>Store billing (2)</td><td><code>store_products</code>, <code>course_store_products</code></td></tr>
+                <tr><td>Learning and engagement (14)</td><td><code>lesson_progress</code>, <code>course_progress_refresh</code>, <code>lesson_notes</code>, <code>qa_threads</code>, <code>qa_replies</code>, <code>qa_votes</code>, <code>announcements</code>, <code>certificates</code>, <code>course_reviews</code>, <code>notifications</code>, <code>push_campaigns</code>, <code>live_sessions</code>, <code>live_attendance</code>, <code>live_notifications_sent</code></td></tr>
+                <tr><td>Personalization (7)</td><td><code>learner_preferences</code>, <code>course_views</code>, <code>recommendation_dismissals</code>, <code>recommendation_runs</code>, <code>course_stats</code>, <code>course_similar</code>, <code>rail_stats_daily</code></td></tr>
+            </tbody>
+        </table>
+
+        <h3>Key tables</h3>
+        <table class="doc-table">
+            <thead><tr><th>Table</th><th>Important columns</th></tr></thead>
+            <tbody>
+                <tr><td><code>users</code></td><td><code>tenant_id</code>, <code>email</code>, <code>phone</code>, <code>full_name</code>, <code>avatar_url</code>, <code>password_hash</code> (scrypt, null for Google/Apple-only accounts), <code>email_verified_at</code>, <code>locale</code>, <code>theme</code>, <code>auth_provider</code>, <code>status</code>, <code>last_active_at</code>, <code>deleted_at</code>. Console roles are rows in <code>user_roles</code></td></tr>
+                <tr><td><code>courses</code></td><td><code>tenant_id</code>, <code>seller_id</code>, <code>category_id</code>, <code>slug</code> (unique per academy), <code>title</code>, <code>subtitle</code>, <code>description</code>, <code>level</code>, <code>language</code>, <code>currency</code>, <code>price_minor</code>, <code>compare_at_price_minor</code>, <code>sale_price_minor</code>, <code>sale_starts_at</code>, <code>sale_ends_at</code>, <code>is_free</code>, <code>status</code>, <code>published_at</code>, <code>access_days</code> (null = lifetime), <code>progression</code>, <code>prevent_skipping</code>, <code>certificate_enabled</code>, counters, <code>deleted_at</code></td></tr>
+                <tr><td><code>lessons</code></td><td><code>course_id</code>, <code>section_id</code>, <code>type</code>, <code>title</code>, <code>sort</code>, <code>is_preview</code>, <code>duration_sec</code>, <code>video_source</code>, <code>video_url</code>, <code>media_file_id</code>, <code>quiz_id</code>, <code>article_body</code>, <code>document_display</code>, <code>is_required</code>, <code>completion_pct</code>, <code>allow_device_download</code>, <code>deleted_at</code></td></tr>
+                <tr><td><code>orders</code></td><td><code>tenant_id</code>, <code>user_id</code>, <code>order_no</code> (for example <code>LM260115-000123</code>), <code>status</code>, <code>currency</code>, <code>subtotal_minor</code>, <code>discount_minor</code>, <code>tax_minor</code>, <code>total_minor</code>, <code>coupon_id</code>, <code>gateway</code>, <code>idempotency_key</code> (unique per academy), <code>store_product_id</code> (store orders only), <code>paid_at</code></td></tr>
+                <tr><td><code>order_items</code></td><td><code>order_id</code>, <code>course_id</code>, <code>seller_id</code>, <code>course_title</code>, <code>unit_price_minor</code>, <code>discount_minor</code>, <code>final_price_minor</code>, <code>tax_minor</code>, <code>commission_pct</code>, <code>platform_fee_minor</code>, <code>seller_share_minor</code>, <code>bundle_id</code>, <code>refunded_at</code>. A <code>CHECK</code> makes the fee and seller share add up to the final price</td></tr>
+                <tr><td><code>payments</code></td><td>One row per payment page or store purchase: <code>order_id</code>, <code>gateway</code>, <code>gateway_ref</code> (checkout session or link id), <code>gateway_txn_id</code>, <code>amount_minor</code>, <code>currency</code>, <code>status</code>, <code>raw_response</code> (jsonb), <code>attention</code> (a note staff must act on)</td></tr>
+                <tr><td><code>enrollments</code></td><td><code>tenant_id</code>, <code>user_id</code>, <code>course_id</code> (unique pair), <code>source</code>, <code>order_item_id</code>, <code>status</code>, <code>progress_pct</code>, <code>last_lesson_id</code>, <code>last_accessed_at</code>, <code>enrolled_at</code>, <code>completed_at</code>, <code>expires_at</code></td></tr>
+                <tr><td><code>certificates</code></td><td><code>user_id</code>, <code>course_id</code>, <code>enrollment_id</code>, <code>credential_id</code>, <code>code</code> (12-character public verification code), <code>learner_name</code>, <code>source</code>, <code>issued_at</code>, <code>revoked_at</code>, <code>pdf_path</code>, <code>image_path</code></td></tr>
+                <tr><td><code>store_products</code></td><td><code>tenant_id</code>, <code>store</code>, <code>product_id</code> (exactly as created in Play Console or App Store Connect), <code>name</code>, <code>reference_price_minor</code>, <code>currency</code>, <code>status</code>. <code>course_store_products</code> links a course to one product per store</td></tr>
+                <tr><td><code>payment_gateways</code></td><td><code>tenant_id</code>, <code>provider</code>, <code>kind</code> (<code>hosted</code> or <code>store</code>, derived), <code>environment</code>, <code>enabled</code>, <code>platforms</code>, <code>display_name</code>, <code>config_encrypted</code> (keys sealed with <code>SETTINGS_ENCRYPTION_KEY</code>)</td></tr>
+            </tbody>
+        </table>
+
+        <h3>Allowed values</h3>
+        <table class="doc-table">
+            <thead><tr><th>Column</th><th>Values</th></tr></thead>
+            <tbody>
+                <tr><td>Order status</td><td>pending, paid, failed, cancelled, refunded, partially_refunded</td></tr>
+                <tr><td>Payment status</td><td>initiated, success, failed, cancelled, unapplied (money that arrived for an order that could not take it), refunded</td></tr>
+                <tr><td>Refund status / method</td><td>requested, processed, failed / gateway, manual</td></tr>
+                <tr><td>Gateway provider</td><td>stripe, flutterwave, razorpay, google_play, app_store (<code>google_play</code> only on android, <code>app_store</code> only on ios)</td></tr>
+                <tr><td>Enrollment status / source</td><td>active, revoked, refunded, expired / purchase, free, admin_grant</td></tr>
+                <tr><td>Course status</td><td>draft, in_review, changes_requested, published, unpublished, archived</td></tr>
+                <tr><td>Course level / progression</td><td>beginner, intermediate, advanced, all / free, sequential</td></tr>
+                <tr><td>Lesson type</td><td>video, document, quiz, article</td></tr>
+                <tr><td>Video source</td><td>upload, stream, youtube, vimeo, url</td></tr>
+                <tr><td>Console role</td><td>owner, admin, content_manager, support, finance, instructor, org_admin, operator, custom (a custom role points at <code>custom_roles</code>)</td></tr>
+                <tr><td>User status / auth provider</td><td>active, suspended, deleted / email, phone, google, apple</td></tr>
+                <tr><td>Business mode</td><td>academy, marketplace</td></tr>
+                <tr><td>Store product status</td><td>active, archived</td></tr>
+            </tbody>
+        </table>
+
+        <h3>SQL functions for money and progress</h3>
+        <p>These functions are the only way the backend changes orders, payments and progress. Their <code>EXECUTE</code> permission is revoked from <code>PUBLIC</code>, so only the database owner (the API's user) can call them.</p>
+        <table class="doc-table">
+            <thead><tr><th>Function</th><th>What it does</th></tr></thead>
+            <tbody>
+                <tr><td><code>create_order</code></td><td>Prices the basket, re-checks coupon limits under a row lock, reserves the coupon use and inserts the order and its items. Returns the existing pending order for the same basket and coupon instead of a second one</td></tr>
+                <tr><td><code>find_pending_order</code></td><td>Finds the learner's pending order with exactly the same courses, bundles and coupon (never a store order)</td></tr>
+                <tr><td><code>confirm_order_payment</code></td><td>Marks the order paid (once), creates the enrollments with their expiry, clears the cart and posts a purchase notification</td></tr>
+                <tr><td><code>settle_gateway_payment</code></td><td>Applies a provider-confirmed payment, keyed on the provider transaction id. It checks the amount and currency, then calls <code>confirm_order_payment</code>, or records the money as <code>unapplied</code> for a refund</td></tr>
+                <tr><td><code>finalize_refunds</code></td><td>Completes processed refunds: marks items refunded, removes course access, revokes the certificate, updates the order status and gives the coupon use back on a full refund</td></tr>
+                <tr><td><code>release_order</code></td><td>Cancels an unpaid order and gives its coupon use back</td></tr>
+                <tr><td><code>course_price</code></td><td>The one pricing function: list price, course sale and sale campaigns</td></tr>
+                <tr><td><code>record_lesson_progress</code>, <code>record_player_progress</code>, <code>refresh_enrollment_progress</code></td><td>Save the player heartbeat, unlock the next lessons, update the course percentage and issue the certificate on completion (<code>issue_certificate</code>)</td></tr>
+                <tr><td><code>start_quiz_attempt</code>, <code>submit_quiz_attempt</code></td><td>Quiz rules (attempt limit, cool-down, time limit) under a per-learner lock</td></tr>
+                <tr><td><code>start_exam_attempt</code>, <code>save_exam_answer</code>, <code>close_exam_attempt</code>, <code>finalize_exam</code>, <code>sweep_exams</code></td><td>The live exam engine: server-side deadline, grading in SQL, final ranks</td></tr>
+            </tbody>
+        </table>
+        <div class="alert">
+            <strong>Rules enforced by the database:</strong> one successful payment per order, idempotent orders and webhooks, refunds never above the amount paid, one live refund per item, one live exam attempt per learner, exam papers frozen once an exam starts, and an append-only activity log.
+        </div>
+
+        <h3>Backups</h3>
+<pre><code># back up (custom format, compressed)
+pg_dump -Fc "$DATABASE_URL" -f lumora-$(date +%F).dump
+
+# restore into an empty database
+pg_restore --no-owner --clean --if-exists -d "$DATABASE_URL" lumora-2026-01-15.dump</code></pre>
+        <p>The dump includes <code>schema_migrations</code>, so after a restore <code>npm run db:migrate</code> applies only newer files. Schedule a daily backup (for example with cron) and keep copies off the server. Uploaded media lives in your S3 bucket, so back up the bucket separately.</p>
+        <div class="alert-warning">
+            <strong>Use the same <code>SETTINGS_ENCRYPTION_KEY</code> after a restore.</strong> Payment gateway keys and the SMTP password are stored encrypted with it. With a different key they cannot be read, and you must enter them again in the admin panel.
+        </div>
+    </section>
+    <section id="faq">
+        <h2>17. FAQ and Common Build Errors</h2>
+
+        <h3>Before anything else</h3>
+        <ul class="step-list">
+            <li>Run <code>flutter doctor</code> and fix every item it reports.</li>
+            <li>Run <code>flutter clean</code> then <code>flutter pub get</code>, and try again.</li>
+            <li>Make sure the backend answers: <code>curl https://api.your-domain.com/health</code>.</li>
+        </ul>
+
+        <h3>Flutter app</h3>
+        <table class="doc-table">
+            <thead><tr><th>Error or problem</th><th>Fix</th></tr></thead>
+            <tbody>
+                <tr><td>"Unsupported class file major version" / Gradle fails to start</td><td>Your JDK is too new. Use JDK 17 or 21: <code>flutter config --jdk-dir "&lt;Android Studio&gt;/jbr"</code></td></tr>
+                <tr><td>"Your project's Gradle / Android Gradle Plugin / Kotlin version is lower than Flutter's minimum"</td><td>Use Flutter 3.47.x as tested. On a newer Flutter, raise the versions in <code>android/settings.gradle.kts</code> and <code>android/gradle/wrapper/gradle-wrapper.properties</code> to the values in the message</td></tr>
+                <tr><td>"No matching client found for package name"</td><td><code>google-services.json</code> does not match <code>applicationId</code>. Download it again for your package name (<a href="#firebase-setup">section 4</a>)</td></tr>
+                <tr><td>Gradle warns "android/key.properties not found" during a release build</td><td>The build is signed with the public debug key. Create your upload key and <code>android/key.properties</code> before publishing (<a href="#build-and-release">section 12</a>)</td></tr>
+                <tr><td>Google sign-in fails on Android (error 10 / DEVELOPER_ERROR)</td><td>Add the SHA-1 and SHA-256 of the key you are running with (debug, upload or Play App Signing) in Firebase, then download <code>google-services.json</code> again</td></tr>
+                <tr><td>Google sign-in works on the phone, but the app then shows an error</td><td>The backend refused the token: its <code>GOOGLE_CLIENT_IDS</code> must contain the app's <code>GOOGLE_WEB_CLIENT_ID</code></td></tr>
+                <tr><td>Google sign-in crashes on iOS</td><td>Add the <code>REVERSED_CLIENT_ID</code> URL scheme (<a href="#social-sign-in">section 5</a>)</td></tr>
+                <tr><td>Nothing loads; every screen shows an error</td><td>Check <code>API_BASE_URL</code> and <code>TENANT</code> in <code>config/app_config.json</code>, and that you passed <code>--dart-define-from-file</code>. On an Android emulator use <code>http://10.0.2.2:3000</code>, not <code>localhost</code></td></tr>
+                <tr><td>It works in debug but not in the release build</td><td>Release builds only allow <code>https</code>. Put the backend behind HTTPS (<a href="#backend-setup">section 13, step 9</a>)</td></tr>
+                <tr><td>A payment method does not appear on the Payment page</td><td>It is switched off in Settings &gt; Payments, its keys are missing, or a course in the cart excludes it (course Pricing step). Google Play appears only on Android and only for a single course</td></tr>
+                <tr><td>Google Play shows "item not available" or no price</td><td>Install the app from a Play testing track with a licence tester account, check that the product ID in Store products matches Play Console exactly and that the product is active, and that the RevenueCat SDK key is the Android one (<code>goog_&hellip;</code>)</td></tr>
+                <tr><td>Paid with Google Play, but the course stays locked</td><td>Check the RevenueCat secret key and webhook (<a href="#store-payments">section 11</a>). The order in the admin panel shows what the backend received</td></tr>
+                <tr><td>CocoaPods errors (<code>pod install</code> fails)</td><td><code>cd ios &amp;&amp; pod repo update &amp;&amp; pod install</code>. If it still fails, delete <code>ios/Pods</code> and <code>ios/Podfile.lock</code> and run <code>pod install</code> again</td></tr>
+                <tr><td>iOS "No signing certificate" / "requires a development team"</td><td>Select your Team in Xcode (Runner &gt; Signing &amp; Capabilities)</td></tr>
+                <tr><td>Push notifications do not arrive</td><td>Check <code>FCM_SERVICE_ACCOUNT_JSON</code> on the backend (same Firebase project as the app) and that the minute cron runs. On iOS, add the push capability and an APNs key, and test on a real device</td></tr>
+                <tr><td>Changed the colours or logo, but the app still shows the old ones</td><td>The app caches its settings. Close it fully and open it again</td></tr>
+            </tbody>
+        </table>
+
+        <h3>Backend and admin panel</h3>
+        <p>See the troubleshooting tables in <a href="#backend-troubleshooting">section 13</a> and <a href="#admin-panel-setup">section 14</a>.</p>
+
+        <h3>General questions</h3>
+        <table class="doc-table">
+            <thead><tr><th>Question</th><th>Answer</th></tr></thead>
+            <tbody>
+                <tr><td>Are courses included?</td><td>No. The optional demo data has sample courses for testing only. You publish your own courses.</td></tr>
+                <tr><td>Can I sell on iOS?</td><td>Yes, with Stripe, Flutterwave or Razorpay, subject to Apple's rules for your app and country. The App Store flow through RevenueCat is built in the same way as Google Play but has not been tested, so test it fully before you rely on it.</td></tr>
+                <tr><td>Can I add another payment gateway?</td><td>Yes, as custom development. The existing gateways in <code>Backend/src/modules/commerce/</code> show the pattern: open a payment, then confirm it with the provider before calling the database's payment functions.</td></tr>
+                <tr><td>Academy or marketplace?</td><td>Academy mode is one school with its own instructors. Marketplace mode lets instructors and organizations apply, publish their own courses and request payouts. Switch in Settings &gt; Business.</td></tr>
+                <tr><td>Can I run several academies on one backend?</td><td>Each academy is a tenant with its own slug, settings and data. One installation normally serves one academy; the app is built for one <code>TENANT</code>.</td></tr>
+                <tr><td>Do I need S3 storage?</td><td>Yes for uploads from the admin panel. You can also paste https links to files hosted elsewhere.</td></tr>
+                <tr><td>Can the backend and admin panel run on one server?</td><td>Yes. Use two nginx sites, for example <code>api.</code> and <code>admin.</code> subdomains.</td></tr>
+                <tr><td>Are any files minified or obfuscated?</td><td>No. All three projects ship as readable source code. Third-party libraries are installed from <code>pubspec.yaml</code> and <code>package.json</code>. (The <code>--obfuscate</code> flag only affects the app you build yourself.)</td></tr>
+            </tbody>
+        </table>
+    </section>
+
+    <section id="support">
+        <h2>18. Support</h2>
+        <p>Questions before or after purchase? Please use the <strong>Support</strong> tab on the CodeCanyon item page. All support is handled through the official Envato item support system.</p>
+        <p>Support covers bugs and questions about the included features. Customisation and installation on your server are not part of item support.</p>
+
+        <h3>Before you open a ticket</h3>
+        <ul class="step-list">
+            <li>Check the <a href="#faq">FAQ and common build errors</a> and the troubleshooting tables in sections 13 and 14.</li>
+            <li>Make sure you are on the latest version (see the <a href="#changelog">changelog</a>).</li>
+        </ul>
+
+        <h3>What to include</h3>
+        <p>A complete first message lets us answer in one reply instead of several:</p>
+        <table class="doc-table">
+            <thead><tr><th>Information</th><th>How to get it</th></tr></thead>
+            <tbody>
+                <tr><td>Your purchase code</td><td>CodeCanyon &gt; Downloads &gt; Lumora &gt; License certificate and purchase code</td></tr>
+                <tr><td>Which part</td><td>Flutter app, backend or admin panel, and the documentation section you were following</td></tr>
+                <tr><td>Platform and versions</td><td>Android or iOS and the device or emulator; your computer's OS; for the app the output of <code>flutter doctor -v</code>; for the server the output of <code>node -v</code> and <code>psql --version</code> and the server's OS</td></tr>
+                <tr><td>The exact error message</td><td>Copy and paste the text, not a summary. A screenshot of the full screen or terminal helps too</td></tr>
+                <tr><td>Log output</td><td>App: the red error lines from <code>flutter run</code>. Backend: <code>pm2 logs lumora-backend --lines 100</code>. Admin panel: <code>pm2 logs lumora-admin --lines 100</code> and the browser console (F12 &gt; Console)</td></tr>
+                <tr><td>Steps to reproduce</td><td>What you did, what you expected, and what happened instead</td></tr>
+            </tbody>
+        </table>
+        <div class="alert-warning">
+            <strong>Never send secrets.</strong> Remove passwords, <code>JWT_SECRET</code>, <code>SETTINGS_ENCRYPTION_KEY</code>, service-account JSON, payment and RevenueCat keys and keystore passwords from anything you paste. We will never ask for them.
+        </div>
+
+        <h3>More resources</h3>
+        <ul class="step-list">
+            <li>Live demo: the admin panel and the Android demo app linked on the item page.</li>
+            <li>Video tutorials: environment setup for <a href="#environment-setup">Windows, macOS and Linux</a> (section 2) and <a href="#firebase-setup">Firebase with Flutter</a> (section 4).</li>
+            <li>Flutter: <a href="https://docs.flutter.dev" target="_blank">docs.flutter.dev</a> &middot; NestJS: <a href="https://docs.nestjs.com" target="_blank">docs.nestjs.com</a> &middot; Next.js: <a href="https://nextjs.org/docs" target="_blank">nextjs.org/docs</a> &middot; RevenueCat: <a href="https://www.revenuecat.com/docs" target="_blank">revenuecat.com/docs</a></li>
+        </ul>
+    </section>
+
+    <section id="ai-disclosure">
+        <h2>19. AI Disclosure</h2>
+        <p>Yes, AI tools were used to help create parts of this item:</p>
+        <ul class="step-list">
+            <li><strong>Code:</strong> AI-assisted writing and review of source code in the app, backend and admin panel.</li>
+            <li><strong>Documentation and description:</strong> this documentation, the README files and the item description were written and edited with AI assistance.</li>
+            <li><strong>Graphics:</strong> the preview images and screenshots were laid out and edited with AI tools.</li>
+        </ul>
+        <p>All of it was reviewed, tested and finished by the author, who supports the item. The item itself includes no AI features: the app, backend and admin panel do not use or call any AI service.</p>
+    </section>
+
+    <section id="changelog">
+        <h2>20. Changelog</h2>
+        <h3>Version 1.0.0 (Initial Release)</h3>
+        <ul>
+            <li>Initial release: Flutter learner app (Android and iOS), NestJS backend and Next.js admin panel.</li>
+        </ul>
+    </section>
+
+    <section id="upgrading">
+        <h2>21. Upgrading to a New Version</h2>
+        <p>When a new version of Lumora is released, download it from your CodeCanyon <strong>Downloads</strong> page and read its <a href="#changelog">changelog</a> first. Your courses, learners, orders and settings live in your PostgreSQL database and your storage bucket, not in the code, so updating the code does <strong>not</strong> delete them.</p>
+
+        <h3>Before you start</h3>
+        <ul class="step-list">
+            <li><strong>Back up the database</strong> (see <a href="#database-schema">section 16</a>):
+<pre><code>pg_dump -Fc -d lumora -f lumora-before-upgrade.dump</code></pre></li>
+            <li>Keep your own changes in Git, or note which files you edited, so you can carry them over.</li>
+            <li>Never overwrite these files with the ones from the new package; they hold your settings:
+                <table class="doc-table">
+                    <thead><tr><th>Project</th><th>Keep your copy of</th></tr></thead>
+                    <tbody>
+                        <tr><td>Backend</td><td><code>.env</code> (above all <code>SETTINGS_ENCRYPTION_KEY</code> and <code>JWT_SECRET</code>), <code>prod.config.js</code> if you changed it</td></tr>
+                        <tr><td>Admin panel</td><td><code>.env.local</code></td></tr>
+                        <tr><td>Flutter app</td><td><code>config/app_config.json</code>, <code>android/app/google-services.json</code>, <code>ios/Runner/GoogleService-Info.plist</code>, <code>android/key.properties</code> and your keystore, your package name in <code>build.gradle.kts</code> and <code>MainActivity.kt</code>, app icons, splash files, <code>AndroidManifest.xml</code> and <code>Info.plist</code> changes</td></tr>
+                    </tbody>
+                </table>
+            </li>
+            <li>Compare the new <code>.env.example</code> with your <code>.env</code> and add any new variables.</li>
+        </ul>
+
+        <h3>Carrying your own code changes forward</h3>
+        <p>If you edited source files (not only settings), do not copy the new version straight over them. The safest way is Git:</p>
+<pre><code># one time, before your first customisation
+cd Backend            # or Admin-Panel, or Flutter-App
+git init &amp;&amp; git add -A &amp;&amp; git commit -m "Lumora 1.0.0 original"
+# ...make your changes and commit them as usual...
+
+# when a new version arrives
+git checkout -b upgrade
+# copy the new package files over the folder (keep the files listed above)
+git add -A &amp;&amp; git commit -m "Lumora 1.x.x original"
+git checkout main &amp;&amp; git merge upgrade      # Git combines both; fix any conflicts it lists</code></pre>
+        <p>Without Git, compare your old folder and the new one with a diff tool (VS Code: right-click two files &gt; <strong>Compare Selected</strong>) and re-apply your edits to the new files.</p>
+
+        <h3>1. Backend</h3>
+<pre><code>cd Backend
+# copy the new files over your old folder, keeping your .env
+npm ci
+npm run build
+npm run db:migrate
+pm2 restart lumora-backend</code></pre>
+        <ul class="step-list">
+            <li><code>npm run db:migrate</code> applies only the migration files that are new. Each file runs once and is recorded in the <code>schema_migrations</code> table.</li>
+            <li>Migrations add or change tables and columns and keep your existing rows. If a release ever needs to change existing data, its changelog says so.</li>
+            <li>Never edit an existing file in <code>db/migrations/</code>; add a new numbered file instead.</li>
+            <li>If something goes wrong, restore the backup with <code>pg_restore -d lumora --clean lumora-before-upgrade.dump</code> and go back to the old code.</li>
+        </ul>
+
+        <h3>2. Admin panel</h3>
+<pre><code>cd Admin-Panel
+# copy the new files over your old folder, keeping .env.local
+pnpm install
+pnpm build
+pm2 restart lumora-admin</code></pre>
+        <p>The admin panel stores nothing itself; all data comes from the backend. Upgrade the backend first.</p>
+
+        <h3>3. Flutter app</h3>
+        <ul class="step-list">
+            <li>Copy the new <code>lib/</code>, <code>pubspec.yaml</code> and <code>assets/</code> over your project, then restore the files you customised (list above). If you use Git, commit first and review the diff.</li>
+            <li>Run:
+<pre><code>flutter clean
+flutter pub get
+cd ios &amp;&amp; pod install &amp;&amp; cd ..
+flutter run --dart-define-from-file=config/app_config.json</code></pre></li>
+            <li>Raise <code>version:</code> in <code>pubspec.yaml</code> (for example <code>1.0.1+2</code>) and publish the update as in <a href="#build-and-release">section 12</a>. Learners keep their courses and progress because these are stored on the server.</li>
+            <li>Old app versions keep working with the new backend unless the changelog says otherwise. To make everyone update, raise the minimum app version in the admin panel (<strong>Settings &gt; App &amp; maintenance</strong>).</li>
+        </ul>
+    </section>
+
+    <script src="js/main.js"></script>
+</body>
+</html>
