@@ -19,6 +19,7 @@
             <li><strong>Admin-Panel/</strong> &mdash; the Next.js admin panel.</li>
             <li><strong>Documentation/</strong> &mdash; this guide.</li>
         </ul>
+        <strong>Accounts you need before you start:</strong> your own <strong>Firebase project</strong> (the app ships placeholder <code>google-services.json</code> and <code>GoogleService-Info.plist</code> files that you replace with your own, <a href="#firebase-setup">section 4</a>) and, if you sell through Google Play, your own <strong>RevenueCat account</strong> (the app uses the RevenueCat SDK <code>purchases_flutter</code> for Google Play purchases; RevenueCat has its own pricing and terms, <a href="#store-payments">section 11</a>). Full list: <a href="#third-party-services">Third-Party Services and Costs</a>.<br><br>
         <strong>Setting up for the first time?</strong> Start with the <a href="#backend-setup">backend (section 13)</a>, then the <a href="#admin-panel-setup">admin panel (section 14)</a>, then come back to the app (sections 1&ndash;12). The app needs a running backend to show anything.
     </div>
 
@@ -42,13 +43,15 @@
             <li><a href="#build-and-release">12. Build and Release</a></li>
             <li><a href="#backend-setup">13. Backend Setup (NestJS)</a></li>
             <li><a href="#admin-panel-setup">14. Admin Panel Setup (Next.js)</a></li>
-            <li><a href="#api-reference">15. API Reference</a></li>
-            <li><a href="#database-schema">16. Database Schema</a></li>
-            <li><a href="#faq">17. FAQ and Common Build Errors</a></li>
-            <li><a href="#support">18. Support</a></li>
-            <li><a href="#ai-disclosure">19. AI Disclosure</a></li>
-            <li><a href="#changelog">20. Changelog</a></li>
-            <li><a href="#upgrading">21. Upgrading to a New Version</a></li>
+            <li><a href="#first-course">15. Publish Your First Course</a></li>
+            <li><a href="#marketplace-mode">16. Marketplace Mode</a></li>
+            <li><a href="#api-reference">17. API Reference</a></li>
+            <li><a href="#database-schema">18. Database Schema</a></li>
+            <li><a href="#faq">19. FAQ and Common Build Errors</a></li>
+            <li><a href="#support">20. Support</a></li>
+            <li><a href="#ai-disclosure">21. AI Disclosure</a></li>
+            <li><a href="#changelog">22. Changelog</a></li>
+            <li><a href="#upgrading">23. Upgrading to a New Version</a></li>
         </ol>
     </div>
 
@@ -474,7 +477,7 @@ flutter gen-l10n</code></pre>
 keytool -list -v -keystore android/app/lumora-debug.jks -alias lumora -storepass lumora-debug
 
 # your upload key (section 12)
-keytool -list -v -keystore ~/upload-keystore.jks -alias upload</code></pre>
+keytool -list -v -keystore /path/to/your/upload-keystore.jks -alias upload</code></pre>
                 Also add the <strong>Play App Signing</strong> key from Play Console (<strong>Test and release &gt; App integrity &gt; App signing</strong>): Google re-signs downloads from Play with it. Download <code>google-services.json</code> again afterwards.</li>
             <li><strong>Web client ID:</strong> after enabling Google in Authentication, copy the <strong>Web client ID</strong> (in <code>google-services.json</code> it is the <code>oauth_client</code> entry with <code>"client_type": 3</code>). Put it in the app's <code>GOOGLE_WEB_CLIENT_ID</code> (<a href="#api-customization">section 8</a>) <strong>and</strong> in the backend's <code>GOOGLE_CLIENT_IDS</code>. The two must match, or the backend refuses the sign-in.</li>
             <li><strong>iOS:</strong> add the <code>REVERSED_CLIENT_ID</code> from <code>GoogleService-Info.plist</code> as a URL scheme in Xcode (<strong>Runner &gt; Info &gt; URL Types</strong>).</li>
@@ -620,9 +623,31 @@ flutter run --dart-define-from-file=config/app_config.json</code></pre></li>
         <h3>Step 3: Turn it on</h3>
         <ul class="step-list">
             <li>Switch the gateway on in Settings &gt; Payments. The app's Payment page lists it at once.</li>
-            <li>Leave <code>PAYMENT_SIMULATOR_ENABLED</code> unset in production. It exists only for local testing and lets orders be marked paid without money.</li>
+            <li>Keep <code>PAYMENT_SIMULATOR_ENABLED=false</code> in production. See <a href="#payment-simulator">Payment simulator</a> below.</li>
             <li>Refunds: open the order in <strong>Orders</strong> and refund all or some items. The refund goes back through the gateway, and the learner loses access to the refunded course.</li>
         </ul>
+
+        <h3 id="payment-simulator">Payment simulator (local testing only)</h3>
+        <div class="alert-danger">
+            <strong>Never turn this on in production.</strong> While <code>PAYMENT_SIMULATOR_ENABLED=true</code>, any signed-in learner can mark their own order as paid without paying, for every gateway that has no keys.
+        </div>
+        <p><strong>What it does.</strong> The simulator lets a developer test the purchase flow (order, access to the course, My Learning, certificates) before any payment gateway is set up. With it on, the backend accepts a gateway that has no keys, and an order on such a gateway can be settled with one API call instead of a real payment. Orders on a gateway that <em>has</em> keys, and all Google Play / App Store orders, are always paid for real; the simulator refuses them. It is a backend tool for developers: the learner app has no simulator button.</p>
+        <p><strong>How to turn it on for local testing:</strong></p>
+        <ol class="step-list">
+            <li>On your own computer, set <code>PAYMENT_SIMULATOR_ENABLED=true</code> in the backend's <code>.env</code> and restart the backend. The log shows a warning: <code>PAYMENT_SIMULATOR_ENABLED=true: orders on a gateway without keys can be marked paid without money changing hands</code>.</li>
+            <li>Create an order as a signed-in learner (<code>POST /checkout/orders</code>, <a href="#api-reference">section 17</a>). Its answer contains <code>"payment": { "action": "simulate", "endpoint": "/checkout/orders/&lt;id&gt;/simulate-payment" }</code>.</li>
+            <li>Settle it with the learner's token:
+<pre><code>curl -X POST http://localhost:3000/checkout/orders/ORDER_ID/simulate-payment \
+  -H "Authorization: Bearer LEARNER_ACCESS_TOKEN" -H "X-Tenant: your-academy-slug" \
+  -H "Content-Type: application/json" -d '{"outcome":"success"}'</code></pre>
+                <code>"outcome": "success"</code> marks the order paid and unlocks the courses; <code>"failed"</code> closes it and gives the coupon back.</li>
+        </ol>
+        <p><strong>How to confirm it is off before you go live:</strong></p>
+        <ol class="step-list">
+            <li>Open the backend's production <code>.env</code> (or your host's environment variables, for example on Vercel) and check that <code>PAYMENT_SIMULATOR_ENABLED</code> is <code>false</code> or not there at all. It is off unless it is exactly <code>true</code>.</li>
+            <li>Restart the backend and read the start-up log (<code>pm2 logs lumora-backend</code>). With the simulator on, a production server logs an <strong>error</strong>: <code>... Turn it off before taking real orders.</code> No such line means it is off.</li>
+            <li>Optional check: call <code>POST /checkout/orders/ANY_ORDER_ID/simulate-payment</code> as a learner. With the simulator off the answer is <code>403</code> with <code>Payment simulator is disabled</code>.</li>
+        </ol>
 
         <div class="alert">
             <strong>Safety rules built in:</strong> nothing in a webhook body is trusted; the backend reads the payment again from the provider. Each event is processed once. If a webhook never arrives, the minute cron asks the provider about open payments, so orders still settle. Money that arrives for an order that can no longer take it is refunded automatically, or flagged on the order for you.
@@ -634,7 +659,11 @@ flutter run --dart-define-from-file=config/app_config.json</code></pre></li>
         <p>On Android, learners can buy a course with Google Play. Stores sell from a catalogue of products with prices set per country, so a course bought this way is paid with a <strong>store product</strong> (for example <code>course_999</code> at USD 9.99) instead of the course's own price. Many courses can share one product. RevenueCat connects the app to Google Play and confirms every purchase to your backend.</p>
 
         <div class="alert-warning">
-            <strong>Your accounts, your costs:</strong> you need your own Google Play Developer account, your own products in Play Console and your own RevenueCat account. Google keeps a service fee on every purchase; RevenueCat is free up to a monthly revenue limit and then takes a share. Apple In-App Purchase uses the same flow with App Store Connect products, but Android is the tested target; test iOS purchases fully before you sell there.
+            <strong>Your accounts, your costs:</strong> you need your own Google Play Developer account, your own products in Play Console and your own RevenueCat account. Google keeps a service fee on every purchase; RevenueCat is free up to a monthly revenue limit and then takes a share.
+        </div>
+
+        <div class="alert-danger">
+            <strong>Android only is tested.</strong> Steps 1&ndash;5 below are for <strong>Google Play</strong>, which is tested end to end. App Store (iOS) purchases use the same code path but have <strong>not been tested</strong>; they are described separately in <a href="#app-store-purchases">App Store purchases (untested)</a> at the end of this section. Do not assume iOS works the same until you have tested it yourself.
         </div>
 
         <h3>Step 1: Create the products in Play Console</h3>
@@ -656,7 +685,7 @@ flutter run --dart-define-from-file=config/app_config.json</code></pre></li>
             <thead><tr><th>Field</th><th>Value</th><th>Environment variable</th></tr></thead>
             <tbody>
                 <tr><td>Secret key</td><td>RevenueCat secret API key (<code>sk_&hellip;</code>). Server only</td><td><code>REVENUECAT_SECRET_KEY</code></td></tr>
-                <tr><td>SDK key</td><td>RevenueCat public SDK key (<code>goog_&hellip;</code>). Sent to the app</td><td><code>REVENUECAT_GOOGLE_SDK_KEY</code> (<code>REVENUECAT_APPLE_SDK_KEY</code> for iOS)</td></tr>
+                <tr><td>SDK key</td><td>RevenueCat public SDK key (<code>goog_&hellip;</code>). Sent to the app</td><td><code>REVENUECAT_GOOGLE_SDK_KEY</code></td></tr>
                 <tr><td>Webhook authorization</td><td>A long random string you make up (step 4)</td><td><code>REVENUECAT_WEBHOOK_AUTH</code></td></tr>
             </tbody>
         </table>
@@ -689,6 +718,19 @@ flutter run --dart-define-from-file=config/app_config.json</code></pre></li>
             <li>The Payment page shows Google's price in the tester's currency. After paying, the course unlocks within a few seconds. A purchase appears in RevenueCat's dashboard and in the admin panel's Orders.</li>
         </ul>
 
+        <h3 id="app-store-purchases">App Store purchases (untested)</h3>
+        <div class="alert-danger">
+            <strong>Warning: not tested.</strong> The backend, the admin panel and the app contain App Store support through the same RevenueCat flow, but it has <strong>not been tested on a real iPhone or with App Store Connect</strong>. Treat it as a starting point, not a finished feature. Before you sell through the App Store, test every step below with Apple's sandbox testers, including a refund. If you only need iOS to sell courses, the web gateways (<a href="#web-payments">section 10</a>) are an alternative, subject to Apple's rules for your app and country.
+        </div>
+        <p>If you decide to try it, the steps mirror Google Play:</p>
+        <ol class="step-list">
+            <li>In App Store Connect create <strong>consumable</strong> in-app purchases with the same product IDs as your Google Play products (Paid Applications agreement signed first).</li>
+            <li>In RevenueCat add an <strong>App Store</strong> app with your bundle ID, connect it to App Store Connect as RevenueCat's setup asks, import the products and copy the app's public SDK key (<code>appl_&hellip;</code>).</li>
+            <li>In the admin panel open <strong>Settings &gt; Payments &gt; App stores &gt; App Store</strong>, enter the same RevenueCat secret key and webhook authorization as for Google Play plus the <code>appl_&hellip;</code> SDK key (environment variable <code>REVENUECAT_APPLE_SDK_KEY</code>), and switch it on.</li>
+            <li>Add the products under <strong>Sales &gt; Store products</strong> with the store set to App Store. The RevenueCat webhook URL is the same as for Google Play.</li>
+            <li>In Xcode add the <strong>In-App Purchase</strong> capability, then test with a sandbox tester on a real device: buy, check the order in the admin panel, check the course unlocks, then refund and check access is removed.</li>
+        </ol>
+
         <h3>How it stays correct</h3>
         <p>The app's word and the webhook body are never trusted: the backend reads every purchase back from RevenueCat and settles the order by the store transaction ID, so one purchase can never unlock two courses. A purchase that completes after its order was closed (for example a Play "pending" purchase paid days later) reopens the order within 7 days; otherwise it is flagged on the order for a refund from the store console.</p>
     </section>
@@ -699,7 +741,7 @@ flutter run --dart-define-from-file=config/app_config.json</code></pre></li>
         <p>Set <code>version:</code> in <code>pubspec.yaml</code>, for example <code>1.0.0+1</code>: <code>1.0.0</code> is the version name learners see and <code>1</code> is the build number. Raise the build number for every upload to Google Play. Android reads both from <code>pubspec.yaml</code>.</p>
 
         <h3>Android: create an upload keystore</h3>
-<pre><code>keytool -genkey -v -keystore ~/upload-keystore.jks -keyalg RSA \
+<pre><code>keytool -genkey -v -keystore /path/to/your/upload-keystore.jks -keyalg RSA \
   -keysize 2048 -validity 10000 -alias upload</code></pre>
         <p>Back up the keystore file and its passwords. If you lose them, you must ask Google to reset your upload key.</p>
 
@@ -708,7 +750,8 @@ flutter run --dart-define-from-file=config/app_config.json</code></pre></li>
 <pre><code>storePassword=your-store-password
 keyPassword=your-key-password
 keyAlias=upload
-storeFile=/Users/you/upload-keystore.jks</code></pre>
+storeFile=/path/to/your/upload-keystore.jks</code></pre>
+        <p class="alert"><code>/path/to/your/upload-keystore.jks</code> is a placeholder: replace it with the full path to your own keystore file, on Windows, macOS or Linux. Use forward slashes <code>/</code> even on Windows. A path relative to the <code>android/</code> folder, such as <code>../keys/upload-keystore.jks</code>, also works.</p>
         <p><code>android/app/build.gradle.kts</code> reads this file in its <code>signingConfigs</code> block and signs release builds with it. <code>key.properties</code> and your keystore are git-ignored; never share them. Without <code>key.properties</code>, a release build is signed with the public debug key <code>android/app/lumora-debug.jks</code> and Gradle prints a warning: such a build installs and runs, but <strong>never upload it to Google Play</strong>. Debug and profile builds always use that debug key, so Google sign-in works in debug once its SHA-1 is registered in Firebase.</p>
 
         <h3>Android: build</h3>
@@ -960,12 +1003,89 @@ cp .env.example .env.local</code></pre>
             <img src="assets/first-run-admin-login.jpg" alt="Lumora admin sign-in page showing the academy name" loading="lazy">
             <figcaption>The sign-in page. Sign in with the backend's <code>SETUP_OWNER_EMAIL</code> and <code>SETUP_OWNER_PASSWORD</code>. Learner accounts are refused here. (The small "N" in the corner is Next.js's development indicator; it does not appear in production.)</figcaption>
         </figure>
-        <p>On a new academy, the first sign-in opens <strong>Set up your academy</strong>: five short steps for Brand (logo, app icon, splash, colours), Business mode, Currency and languages, Payment methods and Legal pages. Save each step; you can change everything later in Settings.</p>
-        <figure class="doc-shot">
-            <img src="assets/first-run-setup.jpg" alt="Set up your academy, step 1 of 5: Brand" loading="lazy">
-            <figcaption>First-run setup, step 1 of 5: Brand.</figcaption>
-        </figure>
         <p>If sign-in fails with "We could not reach the server", check that the backend is running and that <code>API_BASE_URL</code> is right.</p>
+
+        <h3 id="setup-wizard">First-run setup wizard (5 steps)</h3>
+        <p>The first time the owner signs in to a new academy, the admin panel opens <strong>Set up your academy</strong> instead of the dashboard. It has five steps, shown as tabs at the top. Each step saves on its own with its own button, so save before you click <strong>Next</strong>. Nothing here is final: every value can be changed later under <strong>Settings</strong>, and you can jump between steps with the tabs. The red numbers on each screenshot match the numbered notes under it.</p>
+        <div class="flow"><span>1. Brand</span><i>&rarr;</i><span>2. Business mode</span><i>&rarr;</i><span>3. Currency &amp; languages</span><i>&rarr;</i><span>4. Payment methods</span><i>&rarr;</i><span>5. Legal pages</span><i>&rarr;</i><span>Finish setup</span></div>
+
+        <h4>Step 1 of 5: Brand</h4>
+        <figure class="doc-shot">
+            <img src="assets/setup-1-brand.jpg" alt="Setup step 1, Brand: logo, app icon, splash image, main and accent colour, preview" loading="lazy">
+            <figcaption>Step 1: how the app looks.</figcaption>
+        </figure>
+        <ol class="callouts">
+            <li><strong>Logo:</strong> shown at the top of the app. Click <strong>Upload</strong> (needs file storage on the backend, section 13 step 10) or paste an <code>https://</code> link to a PNG with a transparent background. Leave empty for none.</li>
+            <li><strong>App icon:</strong> a square 1024 &times; 1024 image. It is built into the app, so it reaches learners with your next app release (section 7).</li>
+            <li><strong>Splash image:</strong> shown while the app opens. Also built into the app.</li>
+            <li><strong>Main colour:</strong> buttons, links and headers. Pick a colour or type a hex code such as <code>#0F766E</code>.</li>
+            <li><strong>Accent colour:</strong> highlights, badges and offers. Both colours reach the app straight away, with no new build.</li>
+            <li><strong>Preview:</strong> a rough picture of the two colours together.</li>
+            <li><strong>Save changes:</strong> saves this step.</li>
+            <li><strong>Next:</strong> goes to step 2.</li>
+        </ol>
+
+        <h4>Step 2 of 5: Business mode</h4>
+        <figure class="doc-shot">
+            <img src="assets/setup-2-business-mode.jpg" alt="Setup step 2, Business mode: Academy or Marketplace, and leaderboard names" loading="lazy">
+            <figcaption>Step 2: who sells courses on your platform.</figcaption>
+        </figure>
+        <ol class="callouts">
+            <li><strong>Academy</strong> (the default, marked <em>current</em>): you sell your own courses. Choose this if you are one school or one teacher.</li>
+            <li><strong>Marketplace:</strong> outside instructors and organizations can apply, publish their own courses and earn a share of each sale, and you keep a commission. See <a href="#marketplace-mode">section 16</a>.</li>
+            <li><strong>Leaderboards:</strong> whether learners appear on exam leaderboards by name or anonymously by default.</li>
+            <li><strong>Save changes:</strong> saves the leaderboard choice.</li>
+            <li><strong>Switch to Marketplace:</strong> changes the mode. It asks for a short reason, which goes into the activity log. If you are not sure, stay in Academy mode; you can switch later in Settings &gt; Business.</li>
+        </ol>
+
+        <h4>Step 3 of 5: Currency &amp; languages</h4>
+        <figure class="doc-shot">
+            <img src="assets/setup-3-currency-languages.jpg" alt="Setup step 3: academy name, app name, support email, languages, currency, refund window, tax and order prefix" loading="lazy">
+            <figcaption>Step 3: your academy's name, languages and money settings (example values filled in).</figcaption>
+        </figure>
+        <ol class="callouts">
+            <li><strong>Your academy:</strong> <em>Academy name</em> (shown in the admin panel and on receipts), <em>App name</em> (the name under the app icon; needs a new app build) and <em>Support email</em> (for your own records; add it to the Help &amp; support page in step 5 if learners should see it).</li>
+            <li><strong>Offered in the app:</strong> tick the languages learners may choose. English is always on.</li>
+            <li><strong>Default language:</strong> the language new learners start in. Course titles and category names must be filled in this language.</li>
+            <li><strong>Currency:</strong> a three-letter code such as <code>USD</code>, <code>EUR</code> or <code>INR</code>. It is <strong>locked after the first order</strong>, so set it now.</li>
+            <li><strong>Refund window (days):</strong> how long after buying a learner may ask for a refund. 0 means no refunds. In Marketplace mode, a seller's share becomes payable after this window.</li>
+            <li><strong>Tax (%):</strong> 0 hides the tax line at checkout. Tick <em>Prices already include tax</em> if your prices are tax-inclusive.</li>
+            <li><strong>Order number prefix:</strong> 1&ndash;5 capital letters or digits; order numbers look like <code>LM-2026-000123</code>.</li>
+            <li><strong>Save changes.</strong></li>
+        </ol>
+
+        <h4>Step 4 of 5: Payment methods</h4>
+        <figure class="doc-shot">
+            <img src="assets/setup-4-payment-methods.jpg" alt="Setup step 4: payment gateways with keys, webhook and paywall settings, and app stores" loading="lazy">
+            <figcaption>Step 4: how learners pay. Stripe is opened here as the example; Flutterwave and Razorpay work the same way.</figcaption>
+        </figure>
+        <ol class="callouts">
+            <li><strong>The gateway</strong> (here Stripe), with its state: <em>Disabled</em>, <em>Test</em> or <em>Live</em>, and whether keys are saved.</li>
+            <li><strong>API keys, webhook and paywall:</strong> click to open the gateway's settings.</li>
+            <li><strong>Keys:</strong> paste the keys from your own account with the provider, then click <strong>Save keys</strong>. They are stored encrypted and never shown again (only their last characters). Where to find each key: <a href="#web-payments">section 10</a>.</li>
+            <li><strong>Test connection:</strong> after saving, checks that the saved keys work.</li>
+            <li><strong>Webhook URL:</strong> click <strong>Copy</strong> and add it in the provider's dashboard, following the numbered steps shown under it. Webhooks are how orders become paid.</li>
+            <li><strong>Offered in:</strong> the platforms that show this method (Android app, iOS app, web). Google Play and the App Store have their own rules for selling digital content inside apps; read <a href="#store-payments">section 11</a> before you offer web checkout in a store build.</li>
+            <li><strong>Offer at checkout:</strong> tick it, choose <em>Test</em> or <em>Live</em> keys, and click <strong>Save</strong>. The app's Payment page lists the method at once.</li>
+            <li><strong>App stores:</strong> Google Play (and App Store) purchases through RevenueCat, set up in <a href="#store-payments">section 11</a>.</li>
+        </ol>
+        <p>You can skip this step and come back later from Settings &gt; Payments. Until at least one method is on, learners can take free courses but cannot buy paid ones.</p>
+
+        <h4>Step 5 of 5: Legal pages</h4>
+        <figure class="doc-shot">
+            <img src="assets/setup-5-legal-pages.jpg" alt="Setup step 5: legal and help pages with a rich text editor per language" loading="lazy">
+            <figcaption>Step 5: the pages learners read in the app.</figcaption>
+        </figure>
+        <ol class="callouts">
+            <li><strong>Page:</strong> Terms of use, Privacy policy, Refund policy, About us, Contact, or Help &amp; support. Pick one to edit.</li>
+            <li><strong>Language:</strong> each page is written once per language. A page not written in a language yet says so under the tabs.</li>
+            <li><strong>Title</strong> of the page in that language.</li>
+            <li><strong>Page body:</strong> write it in the <em>Visual</em> editor (headings, lists, links, images, tables), paste HTML in the <em>HTML</em> tab, or check it in <em>Preview</em>.</li>
+            <li><strong>Save page:</strong> saves this page in this language. Repeat for each page and language you need.</li>
+            <li><strong>Finish setup:</strong> marks the setup as done and opens the dashboard. The wizard does not open again; everything stays editable in Settings.</li>
+        </ol>
+        <div class="alert-warning">Google Play and the App Store require a privacy policy for apps with accounts. Write at least the <strong>Privacy policy</strong> and <strong>Terms of use</strong> before you publish the app. The texts must fit your own business and country; Lumora does not supply legal text.</div>
+        <p>Next: <a href="#first-course">publish your first course (section 15)</a>.</p>
 
         <h3>Step 3: Go live</h3>
         <p><strong>On your own server with PM2:</strong></p>
@@ -1028,8 +1148,209 @@ pm2 save</code></pre>
         </table>
     </section>
 
+    <section id="first-course">
+        <h2>15. Publish Your First Course</h2>
+        <p>This walkthrough takes a new course from nothing to visible in the app, using only the admin panel. It assumes the backend and admin panel are running (sections 13 and 14) and the setup wizard is finished. It takes about ten minutes. The red numbers on each screenshot match the notes under it.</p>
+        <div class="flow"><span>1. Category</span><i>&rarr;</i><span>2. New course</span><i>&rarr;</i><span>3. Details &amp; price</span><i>&rarr;</i><span>4. Sections &amp; lessons</span><i>&rarr;</i><span>5. Lesson content</span><i>&rarr;</i><span>6. Publish</span><i>&rarr;</i><span>7. Home rail</span><i>&rarr;</i><span>8. Check the app</span></div>
+
+        <h3>Step 1: Create a category</h3>
+        <p>Learners browse courses by category, and every course needs one. Open <strong>Catalogue &gt; Categories</strong> and click <strong>New category</strong>.</p>
+        <figure class="doc-shot"><img src="assets/course-1-category.jpg" alt="New category dialog" loading="lazy"><figcaption>A category called "Design".</figcaption></figure>
+        <ol class="callouts">
+            <li><strong>Name</strong> in your default language (required). The other languages are optional; an empty one falls back to the default.</li>
+            <li><strong>Parent:</strong> leave <em>None (top-level)</em>, or pick a category to make this a sub-category. There are two levels.</li>
+            <li><strong>Show in the app:</strong> keep it ticked. Optionally add an icon (an emoji works) and a position.</li>
+            <li><strong>Save.</strong></li>
+        </ol>
+
+        <h3>Step 2: Create the course</h3>
+        <p>Open <strong>Catalogue &gt; Courses</strong> and click <strong>New course</strong>.</p>
+        <figure class="doc-shot"><img src="assets/course-2-new-course.jpg" alt="New course dialog with the title field" loading="lazy"><figcaption>Only the title is needed to start.</figcaption></figure>
+        <ol class="callouts">
+            <li><strong>Title:</strong> 3 to 160 characters. You can change it later.</li>
+            <li><strong>Create draft:</strong> creates the course as a <em>Draft</em> (learners cannot see drafts) and opens it.</li>
+        </ol>
+
+        <h3>Step 3: Details and price</h3>
+        <p>The course opens on the <strong>Details &amp; pricing</strong> tab. Fill it in and save.</p>
+        <figure class="doc-shot"><img src="assets/course-3-details.jpg" alt="Course details and pricing form" loading="lazy"><figcaption>The Details &amp; pricing tab with example values.</figcaption></figure>
+        <ol class="callouts">
+            <li><strong>Title</strong> as learners see it.</li>
+            <li><strong>Subtitle:</strong> one line under the title on the course page.</li>
+            <li><strong>Description:</strong> what the course is about.</li>
+            <li><strong>Category:</strong> the one from step 1. Also set the <em>Level</em> and the language the course is <em>taught in</em>.</li>
+            <li><strong>What learners will learn:</strong> one point per line. <em>Requirements</em>, <em>Who this course is for</em> and <em>This course includes</em> work the same way. Topics help search.</li>
+            <li><strong>Thumbnail:</strong> click <strong>Upload</strong> (needs file storage on the backend) or paste an <code>https://</code> link. A 16:9 picture works best. A promo video link (YouTube, Vimeo or a video file) is optional.</li>
+            <li><strong>Price</strong> in your academy currency, or tick <em>Free course</em>. A <em>Was price</em> shows as a strike-through; <em>Put this course on sale</em> adds a sale price for a period.</li>
+            <li><strong>Payment methods:</strong> every method that is on in Settings &gt; Payments is accepted. Untick one to exclude it for this course only. A Google Play store product can also be linked here (section 11).</li>
+            <li><strong>Certificate on completion:</strong> learners get a certificate when they finish. Below it: lifetime or time-limited access, and the lesson order (free or sequential).</li>
+            <li><strong>Save changes.</strong></li>
+        </ol>
+
+        <h3>Step 4: Add sections and lessons</h3>
+        <p>Open the <strong>Curriculum</strong> tab. A course is made of sections, and each section holds lessons.</p>
+        <figure class="doc-shot"><img src="assets/course-4-curriculum.jpg" alt="Curriculum tab with a section, two video lessons and a quiz" loading="lazy"><figcaption>One section with two video lessons and a quiz. "No video yet" warns about a lesson that still needs its content.</figcaption></figure>
+        <ol class="callouts">
+            <li><strong>Section:</strong> type a section title in the box at the bottom (5) and click <strong>Add section</strong>. Use the arrows to reorder and <em>Rename</em> to change it.</li>
+            <li><strong>Add a lesson:</strong> choose the type (<em>Video</em>, <em>Document</em>, <em>Article</em> or <em>Quiz</em>), type the title and click <strong>Add lesson</strong>.</li>
+            <li><strong>Edit:</strong> opens the lesson to add its video, file or text (step 5).</li>
+            <li><strong>Edit questions:</strong> for a quiz lesson, opens the quiz builder (questions, pictures, maths, pass mark, attempts).</li>
+            <li><strong>Add section:</strong> adds the next section.</li>
+        </ol>
+
+        <h3>Step 5: Add the lesson content</h3>
+        <figure class="doc-shot"><img src="assets/course-5-lesson.jpg" alt="Edit video lesson dialog" loading="lazy"><figcaption>A video lesson using a YouTube link.</figcaption></figure>
+        <ol class="callouts">
+            <li><strong>Title</strong> of the lesson.</li>
+            <li><strong>Video:</strong> where the video comes from: a <em>YouTube link</em>, a <em>Vimeo link</em>, a <em>Direct video link</em>, <em>Upload MP4</em> (needs file storage) or <em>Stream (adaptive)</em> when Bunny Stream is set up. Then set the length in minutes.</li>
+            <li><strong>Link:</strong> the video address. Unlisted YouTube videos cost nothing to host.</li>
+            <li><strong>Required:</strong> later lessons stay locked until this one is finished. The completion threshold sets how much must be watched (90% by default).</li>
+            <li><strong>Free preview:</strong> anyone can watch this lesson before buying. One or two previews help sales.</li>
+            <li><strong>Save.</strong> Attachments (PDFs and other files for this lesson) can be added in the same dialog.</li>
+        </ol>
+        <p>Document lessons take a PDF or slide file, article lessons a formatted text, and quiz lessons their questions. Fill every lesson before you publish.</p>
+
+        <h3>Step 6: Publish</h3>
+        <p>Click <strong>Publish</strong> at the top right of the course.</p>
+        <figure class="doc-shot"><img src="assets/course-6-publish.jpg" alt="Publish course confirmation dialog" loading="lazy"><figcaption>The confirmation: a published course appears in the app straight away and can be bought.</figcaption></figure>
+        <ol class="callouts">
+            <li><strong>Publish:</strong> confirms.</li>
+        </ol>
+        <div class="alert-warning">If some lessons are still empty, publishing is refused with a message such as <em>These lessons have no video, file or questions yet: Layout and grids</em>. Add the content to those lessons (or remove them) and publish again.</div>
+        <figure class="doc-shot"><img src="assets/course-7-published.jpg" alt="Courses list with the course marked Published" loading="lazy"><figcaption>Back in Catalogue &gt; Courses the course now shows <em>Published</em>.</figcaption></figure>
+        <ol class="callouts">
+            <li>The course, its status, category, price and lesson count.</li>
+        </ol>
+
+        <h3>Step 7: Show it on the app's Home screen</h3>
+        <p>A published course appears at once in its category, in search and in Browse. The Home screen shows the <strong>rails</strong> (rows of courses) you set up in <strong>Platform &gt; App home</strong>. A new academy has none, so add one: click <strong>New rail</strong>.</p>
+        <figure class="doc-shot"><img src="assets/course-8-home-rail.jpg" alt="New rail dialog with a hand-picked course" loading="lazy"><figcaption>A "Featured courses" rail with the new course in it.</figcaption></figure>
+        <ol class="callouts">
+            <li><strong>Title</strong> of the rail in your default language (other languages optional).</li>
+            <li><strong>What fills this rail:</strong> <em>Hand-picked courses</em> (you choose them and their order), <em>Category</em> (courses from the categories you pick, sorted automatically) or <em>Automatic</em> (for example trending, new, or personal picks for each learner).</li>
+            <li><strong>Courses, in order:</strong> for a hand-picked rail, choose a course and click <strong>Add</strong>. Repeat for more.</li>
+            <li><strong>Save.</strong> Optional: a start and end date, and who sees the rail (everyone, signed-in learners, guests or new learners).</li>
+        </ol>
+        <p>On the same page you can add <strong>banners</strong> (the sliding pictures at the top of Home) and <strong>intro slides</strong> (what new learners swipe through the first time).</p>
+
+        <h3>Step 8: Check it in the app</h3>
+        <p>Open the app (or pull down on Home to refresh). The app picks up changes within about a minute. The course is on Home in your rail, in its category and in search, and its page shows the details, price and curriculum you entered:</p>
+        <div class="app-shots">
+            <figure><img src="assets/app-05-home-screen.jpg" alt="App home screen with course rails" loading="lazy"><figcaption>Home with rails</figcaption></figure>
+            <figure><img src="assets/app-12-course-details.jpg" alt="App course details page" loading="lazy"><figcaption>The course page</figcaption></figure>
+            <figure><img src="assets/app-18-payment-methods.jpg" alt="App payment methods page" loading="lazy"><figcaption>Buying it</figcaption></figure>
+        </div>
+        <p><em>These app screenshots come from the demo academy, so their courses differ from the example above.</em></p>
+        <p>If the course does not appear: check that it is <em>Published</em>, that its category has <em>Show in the app</em> ticked, that the app points at the right backend and academy (section 8), and that the course has at least one lesson.</p>
+    </section>
+
+    <section id="marketplace-mode">
+        <h2>16. Marketplace Mode</h2>
+        <p>In <strong>Academy mode</strong> (the default) you are the only seller. In <strong>Marketplace mode</strong>, outside instructors and organizations can also apply, publish their own courses and earn a share of every sale, while you keep a commission. This section walks through the whole journey, end to end, in the order it happens.</p>
+        <div class="flow"><span>1. Turn on</span><i>&rarr;</i><span>2. Set the rules</span><i>&rarr;</i><span>3. Instructor applies in the app</span><i>&rarr;</i><span>4. You approve</span><i>&rarr;</i><span>5. Seller builds a course</span><i>&rarr;</i><span>6. You approve the course</span><i>&rarr;</i><span>7. Sales and earnings</span><i>&rarr;</i><span>8. Payout request</span><i>&rarr;</i><span>9. You pay and record it</span></div>
+        <table class="doc-table">
+            <thead><tr><th>Who</th><th>Where they work</th><th>What they do</th></tr></thead>
+            <tbody>
+                <tr><td>You (owner or admin)</td><td>Admin panel</td><td>Turn the mode on, set the commission, approve sellers and their courses, pay sellers</td></tr>
+                <tr><td>Instructor (a seller)</td><td>Applies in the app, then works in the admin panel's <strong>Studio</strong></td><td>Builds courses, sends them for review, answers questions, requests payouts</td></tr>
+                <tr><td>Organization admin (a seller)</td><td>The same Studio</td><td>Like an instructor, for an organization's page, plus adding the organization's instructors</td></tr>
+                <tr><td>Finance role (optional)</td><td>Admin panel</td><td>Can see earnings and pay sellers</td></tr>
+            </tbody>
+        </table>
+
+        <h3>Step 1: Turn on Marketplace mode</h3>
+        <p>Open <strong>Settings &gt; Business</strong> (or step 2 of the setup wizard) and click <strong>Switch to Marketplace</strong>. Only the owner can change the mode.</p>
+        <figure class="doc-shot"><img src="assets/mkt-1-switch.jpg" alt="Switch to Marketplace confirmation with a reason field" loading="lazy"><figcaption>The switch asks for a reason, which is kept in the activity log.</figcaption></figure>
+        <ol class="callouts">
+            <li><strong>Reason:</strong> a short note for your records.</li>
+            <li><strong>Switch to Marketplace:</strong> the app changes for every learner straight away: seller profiles and the "Become an instructor" entry can appear.</li>
+        </ol>
+        <p>You can switch back to Academy mode later only while no other seller has a published course: unpublish or archive their courses first.</p>
+
+        <h3>Step 2: Set the marketplace rules</h3>
+        <p>After the switch, the same page shows <strong>Selling on your marketplace</strong>.</p>
+        <figure class="doc-shot"><img src="assets/mkt-2-settings.jpg" alt="Marketplace settings: commission, payouts, instructor sign-up" loading="lazy"><figcaption>Settings &gt; Business in Marketplace mode.</figcaption></figure>
+        <ol class="callouts">
+            <li><strong>Marketplace &middot; current:</strong> the mode is on.</li>
+            <li><strong>Your commission (%):</strong> your share of each sale made by another seller, for example 20. You can give a single seller a different rate later (step 4).</li>
+            <li><strong>Seller payouts:</strong> <em>Manual</em> or <em>Automatic</em>. Either way, Lumora does not send money: you pay sellers yourself (bank transfer or another method) and record each payment in the admin panel (step 9).</li>
+            <li><strong>Instructor sign-up:</strong> <em>Off</em> (no new instructors), <em>By invite only</em> (the app shows no application form), or <em>Open</em> (anyone can apply from the app).</li>
+            <li><strong>Show "Become an instructor" in the app:</strong> shows the application form in the app's Account menu. <em>Announcements per course a day</em> limits how often a seller may message a course's learners.</li>
+            <li><strong>Save changes.</strong></li>
+        </ol>
+        <p>The <strong>Refund window</strong> (Settings &gt; General, setup step 3) also matters here: a seller's share of a sale becomes payable only after that many days, so a refund can still be taken back from it.</p>
+
+        <h3>Step 3: An instructor applies from the app</h3>
+        <p>With sign-up open, a learner opens <strong>Account &gt; Become an instructor</strong> in the app and sends a short application: display name, headline, bio, areas of expertise and links (for example a portfolio). They can apply as themselves or for an organization they run. While it is waiting they cannot send another one.</p>
+
+        <h3>Step 4: Approve the application</h3>
+        <p>Open <strong>People &gt; Applications</strong>. Waiting applications are listed first.</p>
+        <figure class="doc-shot"><img src="assets/mkt-3-application.jpg" alt="Seller applications with an application waiting for review" loading="lazy"><figcaption>One application waiting.</figcaption></figure>
+        <ol class="callouts">
+            <li><strong>The applicant</strong> with their headline, email, expertise, bio and links.</li>
+            <li><strong>Approve:</strong> the person becomes a seller with a public instructor profile and gets the instructor role in the admin panel; they are told in the app. For an organization, approving creates the organization's page with the applicant as its admin. <strong>Not approved</strong> asks for a reason that the applicant sees; they may apply again later.</li>
+        </ol>
+        <figure class="doc-shot"><img src="assets/mkt-4-sellers.jpg" alt="Sellers list with the new instructor" loading="lazy"><figcaption>People &gt; Sellers lists every seller with their status, commission and live courses.</figcaption></figure>
+        <ol class="callouts">
+            <li><strong>The new seller.</strong> From here you can set a different <em>Commission</em> for this seller (it applies to new orders), mark them <em>Verified</em>, or <em>Suspend</em> them (new sales stop and their profile is hidden; learners keep what they bought).</li>
+        </ol>
+        <p>With sign-up set to <em>By invite only</em> or <em>Off</em>, the app does not offer the form. An approved organization admin can add the instructors who teach for the organization from their Studio.</p>
+
+        <h3>Step 5: The seller builds a course in the Studio</h3>
+        <p>The seller signs in to the <strong>same admin panel</strong> with the email and password of their app account. (Someone who signed up with Google only sets a password first with <em>Forgot password</em> in the app.) They see only the <strong>Studio</strong>: their own courses, bundles, reviews, questions and earnings.</p>
+        <figure class="doc-shot"><img src="assets/mkt-5-studio.jpg" alt="Seller Studio, My courses, with one draft course" loading="lazy"><figcaption>The seller's Studio.</figcaption></figure>
+        <ol class="callouts">
+            <li><strong>New course:</strong> creates a draft, exactly as in <a href="#first-course">section 15</a>, steps 2 to 5.</li>
+            <li><strong>Their courses</strong> with each one's status.</li>
+        </ol>
+        <p>When the course is ready, the seller clicks <strong>Send for review</strong> instead of Publish. Sellers cannot publish on their own.</p>
+        <figure class="doc-shot"><img src="assets/mkt-7-send-for-review.jpg" alt="Seller course page with the Send for review button" loading="lazy"><figcaption>A seller's course: <em>Send for review</em> replaces Publish.</figcaption></figure>
+        <ol class="callouts">
+            <li><strong>Send for review:</strong> the course moves to <em>In review</em> and appears for your team.</li>
+        </ol>
+
+        <h3>Step 6: Approve the course</h3>
+        <p>Open <strong>Catalogue &gt; Courses</strong> and filter by <em>In review</em> (the dashboard also counts courses awaiting review). Open the course and check it.</p>
+        <figure class="doc-shot"><img src="assets/mkt-8-approve-course.jpg" alt="Course in review with Approve and publish and Request changes" loading="lazy"><figcaption>A seller's course waiting for review.</figcaption></figure>
+        <ol class="callouts">
+            <li><strong>Approve &amp; publish:</strong> the course goes live in the app and can be bought.</li>
+            <li><strong>Request changes:</strong> sends it back with a note the seller sees in the Studio; they fix it and send it again.</li>
+        </ol>
+
+        <h3>Step 7: Sales and earnings</h3>
+        <p>Learners buy a seller's course like any other. For every sale, the order item records the commission rate, your platform fee and the <strong>seller's share</strong>. Refunds are taken back from the seller's share. The seller follows their money under <strong>Earnings</strong> in the Studio:</p>
+        <figure class="doc-shot"><img src="assets/mkt-6-earnings.jpg" alt="Seller earnings with payable balance and Request payout button" loading="lazy"><figcaption>The seller's Earnings page after one sale of a USD 15 course at 20% commission (the refund window was set to 0 days for this example).</figcaption></figure>
+        <ol class="callouts">
+            <li><strong>Payable now:</strong> earnings whose refund window has passed. Also shown: <em>In refund window</em> (not payable yet), <em>Requested</em> and <em>Paid to you</em>.</li>
+            <li><strong>Request payout:</strong> appears when something is payable.</li>
+        </ol>
+
+        <h3>Step 8: The seller requests a payout</h3>
+        <figure class="doc-shot"><img src="assets/mkt-9-request-payout.jpg" alt="Request a payout dialog with amount and note" loading="lazy"><figcaption>The payout request.</figcaption></figure>
+        <ol class="callouts">
+            <li><strong>Amount:</strong> up to the payable balance. The amount is held until you pay or decline it.</li>
+            <li><strong>Note:</strong> where to send the money (for example a bank account) or anything your team should know.</li>
+            <li><strong>Send request.</strong></li>
+        </ol>
+
+        <h3>Step 9: Pay the seller and record it</h3>
+        <p>Open <strong>Sales &gt; Payouts</strong>. <em>Balances</em> shows what each seller has earned, been paid and can be paid; <em>History</em> lists the requests.</p>
+        <figure class="doc-shot"><img src="assets/mkt-10-payouts.jpg" alt="Payouts history with a requested payout" loading="lazy"><figcaption>A payout request waiting in Payouts &gt; History.</figcaption></figure>
+        <ol class="callouts">
+            <li><strong>Requested:</strong> the total waiting to be paid.</li>
+            <li><strong>The request,</strong> with the seller's note.</li>
+            <li><strong>Mark paid:</strong> first send the money yourself, outside Lumora, then record it here. <em>Not approved</em> declines the request and returns the amount to the seller's payable balance.</li>
+        </ol>
+        <figure class="doc-shot"><img src="assets/mkt-11-record-payout.jpg" alt="Mark request paid dialog with a transaction reference" loading="lazy"><figcaption>Recording the payment.</figcaption></figure>
+        <ol class="callouts">
+            <li><strong>Transaction reference</strong> (optional): the bank or wallet transaction ID, so you can match it later. The note goes into the activity log.</li>
+            <li><strong>Record payout:</strong> the payout is marked paid and the seller is notified.</li>
+        </ol>
+        <p>You can also record a payment to a seller without a request, from the <em>Balances</em> tab. A payout can never be more than the seller's payable balance.</p>
+    </section>
+
     <section id="api-reference">
-        <h2>15. API Reference</h2>
+        <h2>17. API Reference</h2>
         <p>The backend in <code>Backend/</code> serves one JSON API. The Flutter app and the admin panel both use it. This section covers the conventions and the most important calls. Every path below is relative to the base URL, with no extra prefix.</p>
 
         <h3>Conventions</h3>
@@ -1216,7 +1537,8 @@ POST /checkout/orders/{id}/verify          (token)            200
             <li><code>POST /checkout/quote</code> takes the same <code>courseIds</code> / <code>bundleIds</code> / <code>couponCode</code> and returns prices without creating anything.</li>
         </ul>
 
-        <h3>Example: Google Play and App Store purchases (RevenueCat)</h3>
+        <h3>Example: Google Play purchases (RevenueCat)</h3>
+        <p class="alert-warning">The same calls take <code>"store": "app_store"</code> on iOS, but App Store purchases have not been tested (<a href="#app-store-purchases">section 11, App Store purchases</a>).</p>
         <p>Inside the mobile app a course can be paid with a store product. The store charges its own local price; the server never trusts the app and reads every purchase back from RevenueCat.</p>
 <pre><code>// 1. which methods this course accepts on this device
 GET /checkout/courses/{courseId}/gateways?platform=android     (token)
@@ -1332,7 +1654,7 @@ Authorization: Bearer &lt;CRON_SECRET&gt;</code></pre>
     </section>
 
     <section id="database-schema">
-        <h2>16. Database Schema</h2>
+        <h2>18. Database Schema</h2>
         <p>PostgreSQL 15 or newer. The backend uses plain parameterised SQL through <code>pg</code>, with no ORM. Business steps that touch money, progress or exams are SQL functions inside the database, so each one runs in a single transaction.</p>
 
         <h3>Where the schema lives</h3>
@@ -1354,6 +1676,160 @@ Authorization: Bearer &lt;CRON_SECRET&gt;</code></pre>
             <li>Translatable text (category names, home section titles, FAQ, legal pages) is stored as <code>jsonb</code>, for example <code>{"en": "Design", "es": "Diseño"}</code>.</li>
             <li>Allowed values are <code>CHECK</code> constraints on <code>text</code> columns, not PostgreSQL enum types.</li>
             <li>Triggers keep the course counters current (<code>lesson_count</code>, <code>total_duration_sec</code>, <code>enrollment_count</code>, <code>rating_avg</code>, <code>rating_count</code>), refuse refunds above the amount paid, and make <code>activity_log</code> append-only.</li>
+        </ul>
+
+        <h3 id="schema-diagram">How the data fits together (overview diagram)</h3>
+        <p>A simplified entity-relationship view: the six main areas, their most important tables, and the columns that join one area to another. Read it before you customise anything. The full list of 92 tables follows under <em>Tables by area</em>.</p>
+        <div class="arch-diagram">
+<svg viewBox="0 0 980 870" xmlns="http://www.w3.org/2000/svg" role="img" aria-label="Lumora database overview: six areas, their main tables and the keys that join them" font-family="-apple-system, Segoe UI, Roboto, Arial, sans-serif">
+  <defs>
+    <marker id="erah" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse"><path d="M0,0 L10,5 L0,10 z" fill="#475569"/></marker>
+  </defs>
+  <style>
+    .pt{font-size:15px;font-weight:700;fill:#111}
+    .ps{font-size:11.5px;fill:#555}
+    .tb{font-size:12.5px;fill:#1f2937;font-family:SFMono-Regular,Menlo,Consolas,monospace}
+    .k{font-size:11px;fill:#334155;font-family:SFMono-Regular,Menlo,Consolas,monospace}
+    .ln{stroke:#475569;stroke-width:1.6;fill:none;marker-end:url(#erah)}
+    .in{stroke:#94a3b8;stroke-width:1.4;fill:none;marker-end:url(#erah)}
+  </style>
+  <rect x="20" y="14" width="940" height="38" rx="8" fill="#f8fafc" stroke="#94a3b8" stroke-dasharray="5 4"/>
+  <text class="tb" x="40" y="38" font-weight="700">tenants</text>
+  <text class="ps" x="110" y="38">One row per academy. Every table below has a tenant_id column pointing here, and every query filters by it.</text>
+  <rect x="20" y="70" width="440" height="200" rx="12" fill="#eef2ff" stroke="#4f46e5" stroke-width="2"/>
+  <text class="pt" x="40" y="98">Accounts and access</text>
+  <text class="ps" x="440" y="98" text-anchor="end">18 tables</text>
+  <rect x="40" y="120" width="190" height="30" rx="6" fill="#ffffff" stroke="#4f46e5" stroke-opacity="0.55"/>
+  <text class="tb" x="52" y="140">users</text>
+  <rect x="250" y="120" width="190" height="30" rx="6" fill="#ffffff" stroke="#4f46e5" stroke-opacity="0.55"/>
+  <text class="tb" x="262" y="140">user_roles</text>
+  <rect x="40" y="165" width="190" height="30" rx="6" fill="#ffffff" stroke="#4f46e5" stroke-opacity="0.55"/>
+  <text class="tb" x="52" y="185">refresh_tokens</text>
+  <rect x="250" y="165" width="190" height="30" rx="6" fill="#ffffff" stroke="#4f46e5" stroke-opacity="0.55"/>
+  <text class="tb" x="262" y="185">auth_identities</text>
+  <rect x="40" y="210" width="190" height="30" rx="6" fill="#ffffff" stroke="#4f46e5" stroke-opacity="0.55"/>
+  <text class="tb" x="52" y="230">device_tokens</text>
+  <rect x="250" y="210" width="190" height="30" rx="6" fill="#ffffff" stroke="#4f46e5" stroke-opacity="0.55"/>
+  <text class="tb" x="262" y="230">custom_roles</text>
+  <path class="in" d="M230 135.0 L248 135.0"/>
+  <path class="in" d="M135.0 150 L135.0 163"/>
+  <rect x="520" y="70" width="440" height="200" rx="12" fill="#fff4e5" stroke="#d97706" stroke-width="2"/>
+  <text class="pt" x="540" y="98">Sellers and payouts (marketplace)</text>
+  <text class="ps" x="940" y="98" text-anchor="end">6 tables</text>
+  <rect x="540" y="120" width="190" height="30" rx="6" fill="#ffffff" stroke="#d97706" stroke-opacity="0.55"/>
+  <text class="tb" x="552" y="140">sellers</text>
+  <rect x="750" y="120" width="190" height="30" rx="6" fill="#ffffff" stroke="#d97706" stroke-opacity="0.55"/>
+  <text class="tb" x="762" y="140">payouts</text>
+  <rect x="540" y="165" width="190" height="30" rx="6" fill="#ffffff" stroke="#d97706" stroke-opacity="0.55"/>
+  <text class="tb" x="552" y="185">instructor_profiles</text>
+  <rect x="750" y="165" width="190" height="30" rx="6" fill="#ffffff" stroke="#d97706" stroke-opacity="0.55"/>
+  <text class="tb" x="762" y="185">organizations</text>
+  <rect x="540" y="210" width="190" height="30" rx="6" fill="#ffffff" stroke="#d97706" stroke-opacity="0.55"/>
+  <text class="tb" x="552" y="230">instructor_applications</text>
+  <rect x="750" y="210" width="190" height="30" rx="6" fill="#ffffff" stroke="#d97706" stroke-opacity="0.55"/>
+  <text class="tb" x="762" y="230">organization_members</text>
+  <path class="in" d="M730 135.0 L748 135.0"/>
+  <path class="in" d="M845.0 195 L845.0 208"/>
+  <rect x="20" y="330" width="440" height="200" rx="12" fill="#e6f4f2" stroke="#0f766e" stroke-width="2"/>
+  <text class="pt" x="40" y="358">Catalogue</text>
+  <text class="ps" x="440" y="358" text-anchor="end">15 tables</text>
+  <rect x="40" y="380" width="190" height="30" rx="6" fill="#ffffff" stroke="#0f766e" stroke-opacity="0.55"/>
+  <text class="tb" x="52" y="400">categories</text>
+  <rect x="250" y="380" width="190" height="30" rx="6" fill="#ffffff" stroke="#0f766e" stroke-opacity="0.55"/>
+  <text class="tb" x="262" y="400">courses</text>
+  <rect x="40" y="425" width="190" height="30" rx="6" fill="#ffffff" stroke="#0f766e" stroke-opacity="0.55"/>
+  <text class="tb" x="52" y="445">bundles</text>
+  <rect x="250" y="425" width="190" height="30" rx="6" fill="#ffffff" stroke="#0f766e" stroke-opacity="0.55"/>
+  <text class="tb" x="262" y="445">course_sections</text>
+  <rect x="40" y="470" width="190" height="30" rx="6" fill="#ffffff" stroke="#0f766e" stroke-opacity="0.55"/>
+  <text class="tb" x="52" y="490">home_sections</text>
+  <rect x="250" y="470" width="190" height="30" rx="6" fill="#ffffff" stroke="#0f766e" stroke-opacity="0.55"/>
+  <text class="tb" x="262" y="490">lessons</text>
+  <path class="in" d="M230 395.0 L248 395.0"/>
+  <path class="in" d="M345.0 410 L345.0 423"/>
+  <path class="in" d="M345.0 455 L345.0 468"/>
+  <rect x="520" y="330" width="440" height="200" rx="12" fill="#fdecef" stroke="#be123c" stroke-width="2"/>
+  <text class="pt" x="540" y="358">Commerce</text>
+  <text class="ps" x="940" y="358" text-anchor="end">18 tables</text>
+  <rect x="540" y="380" width="190" height="30" rx="6" fill="#ffffff" stroke="#be123c" stroke-opacity="0.55"/>
+  <text class="tb" x="552" y="400">orders</text>
+  <rect x="750" y="380" width="190" height="30" rx="6" fill="#ffffff" stroke="#be123c" stroke-opacity="0.55"/>
+  <text class="tb" x="762" y="400">order_items</text>
+  <rect x="540" y="425" width="190" height="30" rx="6" fill="#ffffff" stroke="#be123c" stroke-opacity="0.55"/>
+  <text class="tb" x="552" y="445">payments</text>
+  <rect x="750" y="425" width="190" height="30" rx="6" fill="#ffffff" stroke="#be123c" stroke-opacity="0.55"/>
+  <text class="tb" x="762" y="445">enrollments</text>
+  <rect x="540" y="470" width="190" height="30" rx="6" fill="#ffffff" stroke="#be123c" stroke-opacity="0.55"/>
+  <text class="tb" x="552" y="490">refunds</text>
+  <rect x="750" y="470" width="190" height="30" rx="6" fill="#ffffff" stroke="#be123c" stroke-opacity="0.55"/>
+  <text class="tb" x="762" y="490">coupons</text>
+  <path class="in" d="M730 395.0 L748 395.0"/>
+  <path class="in" d="M635.0 410 L635.0 423"/>
+  <path class="in" d="M845.0 410 L845.0 423"/>
+  <rect x="20" y="590" width="440" height="200" rx="12" fill="#f3e8ff" stroke="#7e22ce" stroke-width="2"/>
+  <text class="pt" x="40" y="618">Quizzes and live exams</text>
+  <text class="ps" x="440" y="618" text-anchor="end">14 tables</text>
+  <rect x="40" y="640" width="190" height="30" rx="6" fill="#ffffff" stroke="#7e22ce" stroke-opacity="0.55"/>
+  <text class="tb" x="52" y="660">quizzes</text>
+  <rect x="250" y="640" width="190" height="30" rx="6" fill="#ffffff" stroke="#7e22ce" stroke-opacity="0.55"/>
+  <text class="tb" x="262" y="660">quiz_attempts</text>
+  <rect x="40" y="685" width="190" height="30" rx="6" fill="#ffffff" stroke="#7e22ce" stroke-opacity="0.55"/>
+  <text class="tb" x="52" y="705">questions</text>
+  <rect x="250" y="685" width="190" height="30" rx="6" fill="#ffffff" stroke="#7e22ce" stroke-opacity="0.55"/>
+  <text class="tb" x="262" y="705">exams</text>
+  <rect x="40" y="730" width="190" height="30" rx="6" fill="#ffffff" stroke="#7e22ce" stroke-opacity="0.55"/>
+  <text class="tb" x="52" y="750">question_options</text>
+  <rect x="250" y="730" width="190" height="30" rx="6" fill="#ffffff" stroke="#7e22ce" stroke-opacity="0.55"/>
+  <text class="tb" x="262" y="750">exam_attempts</text>
+  <path class="in" d="M230 655.0 L248 655.0"/>
+  <path class="in" d="M135.0 715 L135.0 728"/>
+  <path class="in" d="M345.0 715 L345.0 728"/>
+  <rect x="520" y="590" width="440" height="200" rx="12" fill="#ecfdf5" stroke="#047857" stroke-width="2"/>
+  <text class="pt" x="540" y="618">Learning and engagement</text>
+  <text class="ps" x="940" y="618" text-anchor="end">21 tables</text>
+  <rect x="540" y="640" width="190" height="30" rx="6" fill="#ffffff" stroke="#047857" stroke-opacity="0.55"/>
+  <text class="tb" x="552" y="660">lesson_progress</text>
+  <rect x="750" y="640" width="190" height="30" rx="6" fill="#ffffff" stroke="#047857" stroke-opacity="0.55"/>
+  <text class="tb" x="762" y="660">certificates</text>
+  <rect x="540" y="685" width="190" height="30" rx="6" fill="#ffffff" stroke="#047857" stroke-opacity="0.55"/>
+  <text class="tb" x="552" y="705">course_reviews</text>
+  <rect x="750" y="685" width="190" height="30" rx="6" fill="#ffffff" stroke="#047857" stroke-opacity="0.55"/>
+  <text class="tb" x="762" y="705">qa_threads</text>
+  <rect x="540" y="730" width="190" height="30" rx="6" fill="#ffffff" stroke="#047857" stroke-opacity="0.55"/>
+  <text class="tb" x="552" y="750">notifications</text>
+  <rect x="750" y="730" width="190" height="30" rx="6" fill="#ffffff" stroke="#047857" stroke-opacity="0.55"/>
+  <text class="tb" x="762" y="750">live_sessions</text>
+  <path class="ln" d="M135 270 L135 285 L490 285 L490 395.0 L538 395.0"/>
+  <rect x="247" y="274" width="106" height="17" rx="4" fill="#ffffff" stroke="#cbd5e1"/>
+  <text class="k" x="300" y="287" text-anchor="middle">orders.user_id</text>
+  <path class="ln" d="M600 270 L600 305 L345.0 305 L345.0 378"/>
+  <rect x="357" y="294" width="126" height="17" rx="4" fill="#ffffff" stroke="#cbd5e1"/>
+  <text class="k" x="420" y="307" text-anchor="middle">courses.seller_id</text>
+  <path class="ln" d="M440 395.0 L470 395.0 L470 318 L775 318 L775 378"/>
+  <rect x="614" y="307" width="153" height="17" rx="4" fill="#ffffff" stroke="#cbd5e1"/>
+  <text class="k" x="690" y="320" text-anchor="middle">order_items.course_id</text>
+  <path class="ln" d="M900 270 L900 378"/>
+  <rect x="824" y="294" width="153" height="17" rx="4" fill="#ffffff" stroke="#cbd5e1"/>
+  <text class="k" x="900" y="307" text-anchor="middle">order_items.seller_id</text>
+  <path class="ln" d="M40 655.0 L30 655.0 L30 560 L345.0 560 L345.0 502"/>
+  <rect x="134" y="549" width="112" height="17" rx="4" fill="#ffffff" stroke="#cbd5e1"/>
+  <text class="k" x="190" y="562" text-anchor="middle">lessons.quiz_id</text>
+  <path class="ln" d="M845.0 455 L845.0 638"/>
+  <rect x="752" y="561" width="186" height="17" rx="4" fill="#ffffff" stroke="#cbd5e1"/>
+  <text class="k" x="845.0" y="574" text-anchor="middle">certificates.enrollment_id</text>
+  <path class="ln" d="M440 485.0 L478 485.0 L478 572 L635.0 572 L635.0 638"/>
+  <rect x="470" y="561" width="180" height="17" rx="4" fill="#ffffff" stroke="#cbd5e1"/>
+  <text class="k" x="560" y="574" text-anchor="middle">lesson_progress.lesson_id</text>
+  <text class="ps" x="20" y="825">Arrows point from the parent to the child (one course has many sections, one order many items). The label names the column on the child that holds the link.</text>
+  <text class='ps' x='20' y='845'>Every course belongs to a seller; in Academy mode that is your academy's own seller, created at setup. users also links to enrollments, lesson_progress, attempts and certificates.</text>
+</svg>
+        </div>
+        <ul class="step-list">
+            <li><strong>A learner buys a course:</strong> <code>users</code> &rarr; <code>orders</code> &rarr; <code>order_items</code> (one per course) &rarr; <code>payments</code> (one per payment attempt) &rarr; <code>enrollments</code> (access to the course). A refund adds a row to <code>refunds</code> and ends the enrollment.</li>
+            <li><strong>A learner studies:</strong> <code>enrollments</code> unlock the course's <code>course_sections</code> and <code>lessons</code>; each finished lesson is a row in <code>lesson_progress</code>; finishing the course creates a row in <code>certificates</code> when the course gives a certificate.</li>
+            <li><strong>Quizzes and exams:</strong> a quiz lesson points at <code>quizzes</code> (<code>lessons.quiz_id</code>); each try is a <code>quiz_attempts</code> row. Live exams live in <code>exams</code> and <code>exam_attempts</code>, with questions from <code>questions</code>.</li>
+            <li><strong>Who sells:</strong> every course has a <code>seller_id</code>. In Academy mode there is one seller, your academy. In Marketplace mode instructors and organizations get their own <code>sellers</code> rows; <code>order_items.seller_id</code> and the seller's share on each item feed <code>payouts</code>.</li>
+            <li><strong>Many academies, one database:</strong> <code>tenants</code> holds each academy and its settings; every query is scoped by <code>tenant_id</code>.</li>
         </ul>
 
         <h3>Tables by area</h3>
@@ -1442,7 +1918,7 @@ pg_restore --no-owner --clean --if-exists -d "$DATABASE_URL" lumora-2026-01-15.d
         </div>
     </section>
     <section id="faq">
-        <h2>17. FAQ and Common Build Errors</h2>
+        <h2>19. FAQ and Common Build Errors</h2>
 
         <h3>Before anything else</h3>
         <ul class="step-list">
@@ -1494,7 +1970,7 @@ pg_restore --no-owner --clean --if-exists -d "$DATABASE_URL" lumora-2026-01-15.d
     </section>
 
     <section id="support">
-        <h2>18. Support</h2>
+        <h2>20. Support</h2>
         <p>Questions before or after purchase? Please use the <strong>Support</strong> tab on the CodeCanyon item page. All support is handled through the official Envato item support system.</p>
         <p>Support covers bugs and questions about the included features. Customisation and installation on your server are not part of item support.</p>
 
@@ -1530,7 +2006,7 @@ pg_restore --no-owner --clean --if-exists -d "$DATABASE_URL" lumora-2026-01-15.d
     </section>
 
     <section id="ai-disclosure">
-        <h2>19. AI Disclosure</h2>
+        <h2>21. AI Disclosure</h2>
         <p>Yes, AI tools were used to help create parts of this item:</p>
         <ul class="step-list">
             <li><strong>Code:</strong> AI-assisted writing and review of source code in the app, backend and admin panel.</li>
@@ -1541,7 +2017,7 @@ pg_restore --no-owner --clean --if-exists -d "$DATABASE_URL" lumora-2026-01-15.d
     </section>
 
     <section id="changelog">
-        <h2>20. Changelog</h2>
+        <h2>22. Changelog</h2>
         <h3>Version 1.0.0 (Initial Release)</h3>
         <ul>
             <li>Initial release: Flutter learner app (Android and iOS), NestJS backend and Next.js admin panel.</li>
@@ -1549,12 +2025,12 @@ pg_restore --no-owner --clean --if-exists -d "$DATABASE_URL" lumora-2026-01-15.d
     </section>
 
     <section id="upgrading">
-        <h2>21. Upgrading to a New Version</h2>
+        <h2>23. Upgrading to a New Version</h2>
         <p>When a new version of Lumora is released, download it from your CodeCanyon <strong>Downloads</strong> page and read its <a href="#changelog">changelog</a> first. Your courses, learners, orders and settings live in your PostgreSQL database and your storage bucket, not in the code, so updating the code does <strong>not</strong> delete them.</p>
 
         <h3>Before you start</h3>
         <ul class="step-list">
-            <li><strong>Back up the database</strong> (see <a href="#database-schema">section 16</a>):
+            <li><strong>Back up the database</strong> (see <a href="#database-schema">section 18</a>):
 <pre><code>pg_dump -Fc -d lumora -f lumora-before-upgrade.dump</code></pre></li>
             <li>Keep your own changes in Git, or note which files you edited, so you can carry them over.</li>
             <li>Never overwrite these files with the ones from the new package; they hold your settings:
