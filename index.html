@@ -20,6 +20,7 @@
             <li><strong>Documentation/</strong> &mdash; this guide.</li>
         </ul>
         <strong>Accounts you need before you start:</strong> your own <strong>Firebase project</strong> (the app ships placeholder <code>google-services.json</code> and <code>GoogleService-Info.plist</code> files that you replace with your own, <a href="#firebase-setup">section 4</a>) and, if you sell through Google Play, your own <strong>RevenueCat account</strong> (the app uses the RevenueCat SDK <code>purchases_flutter</code> for Google Play purchases; RevenueCat has its own pricing and terms, <a href="#store-payments">section 11</a>). Full list: <a href="#third-party-services">Third-Party Services and Costs</a>.<br><br>
+        <strong>Payments by platform:</strong> paid courses can be bought in the <strong>Android app</strong> (Google Play, and web gateways if you offer them) and on the <strong>web</strong>. The <strong>iOS app</strong> does not sell paid content: App Store purchases and web checkout are turned off on iOS, and only free courses can be taken there. Details: <a href="#payments-by-platform">section 11, Payments by platform</a>.<br><br>
         <strong>Setting up for the first time?</strong> Start with the <a href="#backend-setup">backend (section 13)</a>, then the <a href="#admin-panel-setup">admin panel (section 14)</a>, then come back to the app (sections 1&ndash;12). The app needs a running backend to show anything.
     </div>
 
@@ -151,7 +152,7 @@
         <table class="doc-table">
             <thead><tr><th>Service</th><th>Required?</th><th>Used for</th><th>Who bills you</th></tr></thead>
             <tbody>
-                <tr><td>Server or cloud host</td><td>Required</td><td>Runs the backend (Node.js 20.19+) and the admin panel. A VPS, or a serverless host such as Vercel</td><td>Your hosting provider</td></tr>
+                <tr><td>Server or cloud host</td><td>Required</td><td>Runs the backend (Node.js 24 LTS or newer) and the admin panel. A VPS, or a serverless host such as Vercel</td><td>Your hosting provider</td></tr>
                 <tr><td>PostgreSQL database</td><td>Required</td><td>All academy, course, learner and order data (PostgreSQL 15+)</td><td>Your database host, or free on your own server</td></tr>
                 <tr><td>S3-compatible storage (Cloudflare R2, Amazon S3, others)</td><td>Required for uploads</td><td>Course pictures, lesson videos, documents and certificate files uploaded from the admin panel. Without it you can only paste links to files hosted elsewhere</td><td>Your storage provider, usage-based</td></tr>
                 <tr><td>SMTP email provider</td><td>Required for password reset and emailed codes</td><td>Sending password-reset and verification codes</td><td>Your email provider, beyond its free tier</td></tr>
@@ -162,7 +163,7 @@
                 <tr><td>Razorpay</td><td>Optional</td><td>Hosted checkout with cards, UPI and net banking</td><td>Razorpay, a fee on each payment</td></tr>
                 <tr><td>Google Play Billing</td><td>Optional</td><td>In-app purchase of a course on Android, with one-time products you create in Play Console</td><td>Google keeps a service fee on every purchase (commonly 15&ndash;30%)</td></tr>
                 <tr><td>RevenueCat (your own account)</td><td>Required for Google Play purchases</td><td>Talks to Google Play for the app and confirms every purchase to the backend</td><td>RevenueCat: free up to a monthly revenue limit, then a share of revenue</td></tr>
-                <tr><td>Apple In-App Purchase</td><td>Optional, not tested</td><td>The same RevenueCat flow supports App Store products, but Android is the tested target. Test it fully before you sell on iOS</td><td>Apple keeps a service fee on every purchase</td></tr>
+                <tr><td>Apple In-App Purchase</td><td>Not supported in this version</td><td>Turned off in the iOS app: the iOS app sells no paid content (<a href="#payments-by-platform">section 11</a>)</td><td>&mdash;</td></tr>
                 <tr><td>PayPal, bKash, Nagad, SSLCommerz and other gateways</td><td>Not integrated</td><td>No checkout integration ships for these. Adding one is custom development</td><td>&mdash;</td></tr>
                 <tr><td>Bunny Stream</td><td>Optional</td><td>Adaptive video streaming with quality levels. Without it, lessons play as MP4 files from your storage</td><td>Bunny.net, usage-based</td></tr>
                 <tr><td>Zoom, Google Meet or Jitsi</td><td>Optional</td><td>Live classes: you paste a meeting link. Meetings run on your own account</td><td>That provider, under its pricing</td></tr>
@@ -174,7 +175,7 @@
         </table>
 
         <div class="alert">
-            <strong>Store rules.</strong> Google Play and the App Store have their own rules for selling digital content inside apps, including when web checkout may be offered. You choose which payment methods each course accepts (<a href="#store-payments">section 11</a>). You are responsible for checking those rules for your country and business, and for following the terms of every payment provider you use.
+            <strong>Store rules.</strong> Google Play and the App Store have their own rules for selling digital content inside apps, including when web checkout may be offered. You choose which payment methods each course accepts (<a href="#store-payments">section 11</a>). The iOS app sells no paid content in this version, so Apple's in-app payment rules for digital content are not triggered by checkout. You are responsible for checking those rules for your country and business, and for following the terms of every payment provider you use.
         </div>
     </section>
 
@@ -287,7 +288,7 @@
             <div class="prereq-card"><strong>Java (JDK)</strong>17 or 21<br>(Android Studio's bundled JDK works)</div>
             <div class="prereq-card"><strong>Android Studio</strong>Latest stable, with the Android SDK</div>
             <div class="prereq-card"><strong>Xcode + CocoaPods</strong>Xcode 16 or newer, CocoaPods 1.16 or newer (iOS only)</div>
-            <div class="prereq-card"><strong>Node.js</strong>20.19 or newer (22 LTS works)</div>
+            <div class="prereq-card"><strong>Node.js</strong>24 LTS or newer</div>
             <div class="prereq-card"><strong>pnpm</strong>9 (admin panel; comes with Node through Corepack)</div>
             <div class="prereq-card"><strong>PostgreSQL</strong>15 or newer</div>
             <div class="prereq-card"><strong>IDE</strong>Android Studio or VS Code</div>
@@ -662,8 +663,17 @@ flutter run --dart-define-from-file=config/app_config.json</code></pre></li>
             <strong>Your accounts, your costs:</strong> you need your own Google Play Developer account, your own products in Play Console and your own RevenueCat account. Google keeps a service fee on every purchase; RevenueCat is free up to a monthly revenue limit and then takes a share.
         </div>
 
+        <h3 id="payments-by-platform">Payments by platform</h3>
+        <table class="doc-table">
+            <thead><tr><th>Platform</th><th>Paid courses and bundles</th><th>Free courses</th></tr></thead>
+            <tbody>
+                <tr><td>Android app</td><td>Google Play in-app purchase (RevenueCat), and the web gateways Stripe, Flutterwave and Razorpay if you offer them on Android</td><td>Yes</td></tr>
+                <tr><td>Web</td><td>Stripe, Flutterwave and Razorpay</td><td>Yes</td></tr>
+                <tr><td>iOS app</td><td><strong>Not available.</strong> The iOS app has no App Store purchases and no web checkout. A paid course shows its price and the note "Paid courses can't be bought in the iOS app"</td><td>Yes (also orders that a 100% coupon makes free)</td></tr>
+            </tbody>
+        </table>
         <div class="alert-danger">
-            <strong>Android only is tested.</strong> Steps 1&ndash;5 below are for <strong>Google Play</strong>, which is tested end to end. App Store (iOS) purchases use the same code path but have <strong>not been tested</strong>; they are described separately in <a href="#app-store-purchases">App Store purchases (untested)</a> at the end of this section. Do not assume iOS works the same until you have tested it yourself.
+            <strong>iOS: no paid checkout.</strong> App Store purchases have not been tested, and Apple does not allow web checkout for digital content inside an iOS app. So the iOS app turns both off: Course Details and the bundle page show the price and a note instead of Add to cart / Buy now, Wishlist hides "Add all to cart", and the Payment page shows no methods for a paid order. Free courses work on iOS as usual. The switch is one getter, <code>paidCheckoutAvailable</code> in <code>Flutter-App/lib/src/core/billing/purchase_platform.dart</code>. Steps 1&ndash;5 below are for <strong>Google Play</strong>, which is tested end to end.
         </div>
 
         <h3>Step 1: Create the products in Play Console</h3>
@@ -718,11 +728,11 @@ flutter run --dart-define-from-file=config/app_config.json</code></pre></li>
             <li>The Payment page shows Google's price in the tester's currency. After paying, the course unlocks within a few seconds. A purchase appears in RevenueCat's dashboard and in the admin panel's Orders.</li>
         </ul>
 
-        <h3 id="app-store-purchases">App Store purchases (untested)</h3>
+        <h3 id="app-store-purchases">App Store purchases (turned off, for developers)</h3>
         <div class="alert-danger">
-            <strong>Warning: not tested.</strong> The backend, the admin panel and the app contain App Store support through the same RevenueCat flow, but it has <strong>not been tested on a real iPhone or with App Store Connect</strong>. Treat it as a starting point, not a finished feature. Before you sell through the App Store, test every step below with Apple's sandbox testers, including a refund. If you only need iOS to sell courses, the web gateways (<a href="#web-payments">section 10</a>) are an alternative, subject to Apple's rules for your app and country.
+            <strong>Not supported in this version.</strong> App Store purchases are turned off in the iOS app and are not part of the supported features. The backend and the admin panel still contain App Store support through the same RevenueCat flow, but it has <strong>not been tested on a real iPhone or with App Store Connect</strong>. A developer who wants to sell on iOS must finish and test it end to end: change <code>paidCheckoutAvailable</code> and <code>StoreBillingServiceImpl.isSupported</code> in the app so App Store purchases run on iOS, keep web gateways off for iOS, and test with Apple's sandbox testers, including a refund. This is custom development and is not covered by item support.
         </div>
-        <p>If you decide to try it, the steps mirror Google Play:</p>
+        <p>The steps mirror Google Play:</p>
         <ol class="step-list">
             <li>In App Store Connect create <strong>consumable</strong> in-app purchases with the same product IDs as your Google Play products (Paid Applications agreement signed first).</li>
             <li>In RevenueCat add an <strong>App Store</strong> app with your bundle ID, connect it to App Store Connect as RevenueCat's setup asks, import the products and copy the app's public SDK key (<code>appl_&hellip;</code>).</li>
@@ -754,6 +764,8 @@ storeFile=/path/to/your/upload-keystore.jks</code></pre>
         <p class="alert"><code>/path/to/your/upload-keystore.jks</code> is a placeholder: replace it with the full path to your own keystore file, on Windows, macOS or Linux. Use forward slashes <code>/</code> even on Windows. A path relative to the <code>android/</code> folder, such as <code>../keys/upload-keystore.jks</code>, also works.</p>
         <p><code>android/app/build.gradle.kts</code> reads this file in its <code>signingConfigs</code> block and signs release builds with it. <code>key.properties</code> and your keystore are git-ignored; never share them. Without <code>key.properties</code>, a release build is signed with the public debug key <code>android/app/lumora-debug.jks</code> and Gradle prints a warning: such a build installs and runs, but <strong>never upload it to Google Play</strong>. Debug and profile builds always use that debug key, so Google sign-in works in debug once its SHA-1 is registered in Firebase.</p>
 
+        <p><strong>Android SDK levels:</strong> <code>android/app/build.gradle.kts</code> sets <code>compileSdk = 36</code>, <code>targetSdk = 36</code> and <code>minSdk = 24</code> (Android 7.0) as fixed numbers, so they do not change with your Flutter version.</p>
+
         <h3>Android: build</h3>
         <table class="doc-table">
             <thead><tr><th>Purpose</th><th>Command</th></tr></thead>
@@ -781,7 +793,7 @@ storeFile=/path/to/your/upload-keystore.jks</code></pre>
 
     <section id="backend-setup">
         <h2>13. Backend Setup (NestJS)</h2>
-        <p>The backend is the heart of Lumora: the app and the admin panel both talk to it. It needs Node.js 20.19 or newer and PostgreSQL 15 or newer. The commands below are for a Linux server (Ubuntu); they work the same on macOS for local testing.</p>
+        <p>The backend is the heart of Lumora: the app and the admin panel both talk to it. It needs Node.js 24 LTS or newer and PostgreSQL 15 or newer. The commands below are for a Linux server (Ubuntu); they work the same on macOS for local testing.</p>
 
         <h3>Step 1: Install</h3>
 <pre><code>cd Backend
@@ -1065,9 +1077,9 @@ cp .env.example .env.local</code></pre>
             <li><strong>Keys:</strong> paste the keys from your own account with the provider, then click <strong>Save keys</strong>. They are stored encrypted and never shown again (only their last characters). Where to find each key: <a href="#web-payments">section 10</a>.</li>
             <li><strong>Test connection:</strong> after saving, checks that the saved keys work.</li>
             <li><strong>Webhook URL:</strong> click <strong>Copy</strong> and add it in the provider's dashboard, following the numbered steps shown under it. Webhooks are how orders become paid.</li>
-            <li><strong>Offered in:</strong> the platforms that show this method (Android app, iOS app, web). Google Play and the App Store have their own rules for selling digital content inside apps; read <a href="#store-payments">section 11</a> before you offer web checkout in a store build.</li>
+            <li><strong>Offered in:</strong> the platforms that show this method (Android app, web). The "iOS app" option has no effect: the iOS app sells no paid content (<a href="#payments-by-platform">section 11</a>). Google Play has its own rules for selling digital content inside apps; check them before you offer web checkout on Android.</li>
             <li><strong>Offer at checkout:</strong> tick it, choose <em>Test</em> or <em>Live</em> keys, and click <strong>Save</strong>. The app's Payment page lists the method at once.</li>
-            <li><strong>App stores:</strong> Google Play purchases through RevenueCat, set up in <a href="#store-payments">section 11</a>. The App Store row is there too, but App Store purchases are not tested; leave it off unless you test it yourself (<a href="#app-store-purchases">section 11, App Store purchases</a>).</li>
+            <li><strong>App stores:</strong> Google Play purchases through RevenueCat, set up in <a href="#store-payments">section 11</a>. Leave the App Store row off: the iOS app does not use it (<a href="#payments-by-platform">section 11</a>).</li>
         </ol>
         <p>You can skip this step and come back later from Settings &gt; Payments. Until at least one method is on, learners can take free courses but cannot buy paid ones.</p>
 
@@ -1142,7 +1154,7 @@ pm2 save</code></pre>
                 <tr><td>Sign-in fails or every page shows an error</td><td><code>API_BASE_URL</code> is wrong or the backend is down. Check <code>curl API_BASE_URL/health</code> from the admin panel's server</td></tr>
                 <tr><td>Changes to <code>.env.local</code> have no effect</td><td>Restart <code>pnpm dev</code>; in production run <code>pnpm build</code> again and restart</td></tr>
                 <tr><td>Images upload but do not show</td><td><code>PUBLIC_MEDIA_BASE_URL</code> on the backend does not point at the public bucket or CDN</td></tr>
-                <tr><td><code>pnpm: command not found</code></td><td>Run <code>corepack enable</code> (Node.js 20.19+), or <code>npm install -g pnpm@9</code></td></tr>
+                <tr><td><code>pnpm: command not found</code></td><td>Run <code>corepack enable</code> (Node.js 24+), or <code>npm install -g pnpm@9</code></td></tr>
                 <tr><td>Build runs out of memory</td><td>Add swap on small servers, or build on your computer and copy the <code>.next</code> folder</td></tr>
             </tbody>
         </table>
@@ -1538,7 +1550,7 @@ POST /checkout/orders/{id}/verify          (token)            200
         </ul>
 
         <h3>Example: Google Play purchases (RevenueCat)</h3>
-        <p class="alert-warning">The same calls take <code>"store": "app_store"</code> on iOS, but App Store purchases have not been tested (<a href="#app-store-purchases">section 11, App Store purchases</a>).</p>
+        <p class="alert-warning">The API also accepts <code>"store": "app_store"</code>, but the iOS app does not call it: App Store purchases are turned off in this version (<a href="#payments-by-platform">section 11</a>).</p>
         <p>Inside the mobile app a course can be paid with a store product. The store charges its own local price; the server never trusts the app and reads every purchase back from RevenueCat.</p>
 <pre><code>// 1. which methods this course accepts on this device
 GET /checkout/courses/{courseId}/gateways?platform=android     (token)
@@ -1590,7 +1602,7 @@ X-Tenant: acme
 <pre><code>POST /webhooks/stripe/acme
 POST /webhooks/flutterwave/acme
 POST /webhooks/razorpay/acme
-POST /webhooks/revenuecat/acme      // Google Play purchases (App Store: same URL, untested)
+POST /webhooks/revenuecat/acme      // Google Play purchases
 
 // answers (no envelope)
 200 { "received": true }            // also for a repeated event: { "received": true, "duplicate": true }
@@ -1958,7 +1970,7 @@ pg_restore --no-owner --clean --if-exists -d "$DATABASE_URL" lumora-2026-01-15.d
             <thead><tr><th>Question</th><th>Answer</th></tr></thead>
             <tbody>
                 <tr><td>Are courses included?</td><td>No. The optional demo data has sample courses for testing only. You publish your own courses.</td></tr>
-                <tr><td>Can I sell on iOS?</td><td>Yes, with Stripe, Flutterwave or Razorpay, subject to Apple's rules for your app and country. The App Store flow through RevenueCat is built in the same way as Google Play but has not been tested, so test it fully before you rely on it.</td></tr>
+                <tr><td>Can I sell on iOS?</td><td>Not in this version. The iOS app offers free courses only: App Store purchases and web checkout are turned off on iOS (<a href="#payments-by-platform">section 11</a>). Paid courses are sold in the Android app and on the web.</td></tr>
                 <tr><td>Can I add another payment gateway?</td><td>Yes, as custom development. The existing gateways in <code>Backend/src/modules/commerce/</code> show the pattern: open a payment, then confirm it with the provider before calling the database's payment functions.</td></tr>
                 <tr><td>Academy or marketplace?</td><td>Academy mode is one school with its own instructors. Marketplace mode lets instructors and organizations apply, publish their own courses and request payouts. Switch in Settings &gt; Business.</td></tr>
                 <tr><td>Can I run several academies on one backend?</td><td>Each academy is a tenant with its own slug, settings and data. One installation normally serves one academy; the app is built for one <code>TENANT</code>.</td></tr>
